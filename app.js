@@ -17,6 +17,10 @@ $(document).ready(function(){
         menu = switchMenu("marketplace");
     });
 
+$("#return").click(function(){
+    menu = switchMenu("main");
+})
+
     function changeInventory(){
         $("#money").html("Money: $" + money);
 
