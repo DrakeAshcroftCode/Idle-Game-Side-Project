@@ -15,10 +15,12 @@ $(document).ready(function(){
 
     $("#visit").click(function(){
         menu = switchMenu("marketplace");
+        changeMarket();
     });
 
     $("#return").click(function(){
         menu = switchMenu("main");
+
     });
 
     function changeInventory(){
@@ -30,6 +32,32 @@ $(document).ready(function(){
             $("#logs").html("You now own " + logs + " logs.");
         }
     }
+    $("#sell1").click(function(){
+        if(logs >= 1){
+            logs -= 1;
+            money += logPrice;
+            changeInventory();
+            changeMarket();
+        }
+    });
+
+    $("#sell10").click(function(){
+        if(logs >= 10){
+            logs -= 10;
+            money += 10 * logPrice;
+            changeInventory();
+            changeMarket();
+        }
+    });
+
+    $("#sellAll").click(function(){
+        if(logs > 0){
+            money += logs * logPrice;
+            logs = 0;
+            changeInventory();
+            changeMarket();
+        }
+    });
 
     function changeMarket(){
         if(logs > 0){
@@ -48,8 +76,8 @@ $(document).ready(function(){
             $("#sell10").css("display", "none");
         }
     }
-    
-    changeMarket();
+
+
 
     function switchMenu(menu){
         $(".menus").children().css("display", "none");
