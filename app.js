@@ -13,13 +13,13 @@ $(document).ready(function(){
         changeMarket();
     });
 
-    $("#visit").click(function(){ // Removed extra closing parenthesis
+    $("#visit").click(function(){
         menu = switchMenu("marketplace");
     });
 
-$("#return").click(function(){
-    menu = switchMenu("main");
-})
+    $("#return").click(function(){
+        menu = switchMenu("main");
+    });
 
     function changeInventory(){
         $("#money").html("Money: $" + money);
@@ -31,9 +31,29 @@ $("#return").click(function(){
         }
     }
 
+    function changeMarket(){
+        if(logs > 0){
+            $("#sellAll").css("display", "block");
+        }else{
+            $("#sellAll").css("display", "none");
+        }
+        if(logs >= 1){
+            $("#sell1").css("display", "block");
+        }else{
+            $("#sell1").css("display", "none");
+        } 
+        if(logs >= 10){
+            $("#sell10").css("display", "block");
+        }else{
+            $("#sell10").css("display", "none");
+        }
+    }
+    
+    changeMarket();
+
     function switchMenu(menu){
         $(".menus").children().css("display", "none");
-        $("." + menu).css("display", "block"); // Fixed: Replaced comma with a period
+        $("." + menu).css("display", "block");
         return menu;
     }
 });
