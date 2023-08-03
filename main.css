@@ -1,25 +1,84 @@
-.inventory{
+/* Update inventory styles */
+.inventory {
     position: fixed;
     bottom: 0;
-    width:100%;
-}
-
-.marketplace{
-    display: none;
-    
-}
-.sellButtons{
-    display: grid;
-    grid-template-columns: repeat(3, 72px);
-}
-
-.upgrades{
-    position:fixed;
-    bottom: 100px;
     width: 100%;
-}
-
-button{
-    background-color:white;
+    background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent background */
+    color: white;
+    padding: 10px;
+    font-size: 20px;
+  }
+  
+  /* Add some background and box-shadow to the marketplace */
+  .marketplace {
+    display: none;
+    background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent background */
+    padding: 20px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow effect */
+  }
+  
+  /* Style the sell buttons */
+  .sellButtons {
+    display: grid;
+    grid-template-columns: repeat(3, 100px); /* Wider buttons */
+    gap: 10px; /* Add some spacing between buttons */
+  }
+  
+  .sellButtons button {
+    background-color: #4CAF50; /* Green background */
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .sellButtons button:hover {
+    background-color: #45a049; /* Darker green on hover */
+  }
+  
+  /* Style the upgrades section */
+  .upgrades {
+    position: fixed;
+    bottom: 140px; /* Adjust the position to fit better with other elements */
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent background */
+    padding: 20px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow effect */
+  }
+  
+  .upgrades button {
+    background-color: #2196F3; /* Blue background */
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .upgrades button:hover {
+    background-color: #0b7dda; /* Darker blue on hover */
+  }
+  
+  /* Style the main buttons */
+  button {
+    background-color: #f9f9f9; /* Light gray background */
+    color: #333;
+    border: none;
+    padding: 10px;
     font-size: 18px;
-}
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 10px; /* Add some vertical spacing between buttons */
+  }
+  
+  button:hover {
+    background-color: #ddd; /* Slightly darker gray on hover */
+  }
+  

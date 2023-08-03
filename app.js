@@ -1,39 +1,65 @@
-$(document).ready(function(){
+$(document).ready(function() {
     var logs = 0;
     var money = 0;
     var logPlus = 1;
     var autoLogPlus = 0;
-    var autoChopperPrice = 100;
+    var autoChopperPrice = 1;
+    var chopperSpeedMultiplier = 1; 
     var logPrice = 1;
     var menu;
+    var autochopperInterval;
 
-    $("#chop").click(function(){
+    $("#chop").click(function() {
         logs += logPlus;
         changeInventory();
         changeMarket();
     });
 
-    $("#visit").click(function(){
+    $("#visit").click(function() {
         menu = switchMenu("marketplace");
         changeMarket();
     });
 
-    $("#return").click(function(){
+    $("#return").click(function() {
         menu = switchMenu("main");
-
     });
 
-    function changeInventory(){
+    $("#autochopper").click(function() {
+        if (money >= autoChopperPrice) {
+            money -= autoChopperPrice;
+            autoLogPlus = 1 * chopperSpeedMultiplier;
+            changeInventory();
+            changeMarket();
+            activateAutoChopper();
+
+            autoChopperPrice *= 2;
+            chopperSpeedMultiplier *= 2;
+
+            $("#autochopper").text("Buy Autochopper [$" + autoChopperPrice + "]");
+            changeMarket();
+        }
+    });
+
+    function activateAutoChopper() {
+        autochopperInterval = setInterval(function() {
+            logs += autoLogPlus;
+            changeInventory();
+            changeMarket();
+        }, 1000 / autoLogPlus);
+    }
+
+    function changeInventory() {
         $("#money").html("Money: $" + money);
 
-        if(logs === 1){
+        if (logs === 1) {
             $("#logs").html("You now own " + logs + " log.");
         } else {
             $("#logs").html("You now own " + logs + " logs.");
         }
     }
-    $("#sell1").click(function(){
-        if(logs >= 1){
+
+    $("#sell1").click(function() {
+        if (logs >= 1) {
             logs -= 1;
             money += logPrice;
             changeInventory();
@@ -41,8 +67,8 @@ $(document).ready(function(){
         }
     });
 
-    $("#sell10").click(function(){
-        if(logs >= 10){
+    $("#sell10").click(function() {
+        if (logs >= 10) {
             logs -= 10;
             money += 10 * logPrice;
             changeInventory();
@@ -50,8 +76,8 @@ $(document).ready(function(){
         }
     });
 
-    $("#sellAll").click(function(){
-        if(logs > 0){
+    $("#sellAll").click(function() {
+        if (logs > 0) {
             money += logs * logPrice;
             logs = 0;
             changeInventory();
@@ -59,27 +85,25 @@ $(document).ready(function(){
         }
     });
 
-    function changeMarket(){
-        if(logs > 0){
+    function changeMarket() {
+        if (logs > 0) {
             $("#sellAll").css("display", "block");
-        }else{
+        } else {
             $("#sellAll").css("display", "none");
         }
-        if(logs >= 1){
+        if (logs >= 1) {
             $("#sell1").css("display", "block");
-        }else{
+        } else {
             $("#sell1").css("display", "none");
-        } 
-        if(logs >= 10){
+        }
+        if (logs >= 10) {
             $("#sell10").css("display", "block");
-        }else{
+        } else {
             $("#sell10").css("display", "none");
         }
     }
 
-
-
-    function switchMenu(menu){
+    function switchMenu(menu) {
         $(".menus").children().css("display", "none");
         $("." + menu).css("display", "block");
         return menu;
