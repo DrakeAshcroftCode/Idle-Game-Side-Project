@@ -3,12 +3,23 @@ $(document).ready(function() {
     var money = 0;
     var logPlus = 1;
     var autoLogPlus = 0;
-    var autoChopperPrice = 1;
-    var chopperSpeedMultiplier = 1; 
+    var autoChopperPrice = 100;
+    var chopperSpeedMultiplier = 1;
     var logPrice = 1;
+    var planks = 0; // New resource: planks
+    var plankPrice = 4; // Added missing plankPrice variable
+    var sawmillPrice = 1000; // Price of the sawmill
+    var sawmillSpeed = 1000; // Time interval for sawmill operation (in milliseconds)
     var menu;
     var autochopperInterval;
-
+    var autochopperlevel = 0;
+    var sawmillActive = false; // Flag to check if the sawmill is active
+    var autoSellerLogsToSell = 1; // Adjust the number of logs to sell as needed
+    var autoSellerInterval = 5000; // Interval in milliseconds (e.g., every 5 seconds)
+    var autoSellerLevel = 1; // Flag to check if the auto seller is active
+    var logHeightMultiplier = 1.5;
+    var autoSellerTimer; // Variable to store the timer ID
+    var autosellerCost = 500; // Adjust the cost as needed
     $("#chop").click(function() {
         logs += logPlus;
         changeInventory();
@@ -23,39 +34,150 @@ $(document).ready(function() {
     $("#return").click(function() {
         menu = switchMenu("main");
     });
-
+    function updateLogPile() {
+        // Calculate the height or background position based on the number of logs
+        var logPileHeight = logs * logHeightMultiplier; // Adjust logHeightMultiplier as needed
+    
+        // Update the log pile's style
+        $(".log-pile").css("height", logPileHeight + "px");
+    }
+    
     $("#autochopper").click(function() {
         if (money >= autoChopperPrice) {
             money -= autoChopperPrice;
-            autoLogPlus = 1 * chopperSpeedMultiplier;
+            autochopperlevel++;
+            autoLogPlus = autoLogPlus + autochopperlevel;
             changeInventory();
             changeMarket();
             activateAutoChopper();
+            updateLogPile();
 
             autoChopperPrice *= 2;
-            chopperSpeedMultiplier *= 2;
+            chopperSpeedMultiplier++;
 
             $("#autochopper").text("Buy Autochopper [$" + autoChopperPrice + "]");
             changeMarket();
         }
     });
+    // $(document).ready(function() {
+    //     function addLogsToContainer(logs) {
+    //         var logContainer = $(".log-container");
+    //         logContainer.empty(); 
+          
+    //         for (var i = 0; i < logs; i++) {
+    //           var logImage = $("<img>").attr("src", "log-image.png");
+    //           logContainer.append(logImage);
+    //         }
+    //       }      });
+    function activateAutoSeller() {
+        autoSellerTimer = setInterval(function() {
+            if (logs >= autoSellerLogsToSell) {
+                logs -= autoSellerLogsToSell;
+                money += autoSellerLogsToSell * logPrice;
+                changeInventory();
+                changeMarket();
+                updateLogPile();
 
+            }
+        }, autoSellerInterval);
+    }
+    // function addLogImages(logCount) {
+    //     const logContainer = $(".log-container");
+    //     logContainer.empty();
+    
+    //     for (let i = 0; i < logCount; i++) {
+    //         const logImage = $("<img>").attr("src", "path/to/log-image.png").addClass("log-image");
+    //         logContainer.append(logImage);
+    //     }
+    // }
+    
+    // function removeLogImages(logCount) {
+    //     const logContainer = $(".log-container");
+    //     const logImages = logContainer.find(".log-image");
+    
+    //     for (let i = 0; i < logCount; i++) {
+    //         logImages.eq(i).remove();
+    //     }
+    // }
+    
+    // Example usage to add log images (call this when logs accumulate)
+
+    $("#autoseller").click(function() {
+        // Define the cost of the autoseller
+        
+    
+        // Check if the player has enough money to buy the autoseller
+        if (money >= autosellerCost) {
+            // Deduct the cost from the player's money
+
+            // Update the UI to reflect the deduction
+            changeInventory();
+            if (autoSellerLevel === 1) {
+                money -= autosellerCost;
+                autosellerCost = autosellerCost * 2;
+
+                // Activate the autoseller
+                activateAutoSeller();
+                autoSellerLevel++;
+            } else {
+                money -= autosellerCost;
+                autosellerCost = autosellerCost * 2;
+                autoSellerLogsToSell = autoSellerLogsToSell * autoSellerLevel;
+                autoSellerLevel++;
+
+            }
+            // Update the autoseller button text to indicate it's purchased
+            $(this).text('Autoseller ' + autosellerCost);
+    
+            // Optionally, you can change the styling to indicate it's purchased
+            $(this).addClass('purchased'); // Add a CSS class for styling
+        } else {
+            // Player doesn't have enough money to buy the autoseller
+            alert('You do not have enough money to purchase the autoseller.');
+        }
+
+    });
+    
+        
     function activateAutoChopper() {
         autochopperInterval = setInterval(function() {
             logs += autoLogPlus;
             changeInventory();
             changeMarket();
-        }, 1000 / autoLogPlus);
+            updateLogPile();
+
+        }, 2500 / autoLogPlus);
+    }
+    $("#sawmill").click(function() {
+        if (money >= sawmillPrice && !sawmillActive) {
+            money -= sawmillPrice;
+            activateSawmill();
+            changeInventory();
+            $("#sawmill").text("Buy Sawmill [$" + sawmillPrice + "]");
+            changeMarket();
+            updateLogPile();
+
+        }
+    });
+
+    function activateSawmill() {
+        sawmillActive = true;
+        setInterval(function() {
+            if (logs >= 1) {
+                logs -= 1;
+                planks += 1;
+                changeInventory();
+                changeMarket();
+                updateLogPile();
+
+            }
+        }, sawmillSpeed);
     }
 
     function changeInventory() {
         $("#money").html("Money: $" + money);
-
-        if (logs === 1) {
-            $("#logs").html("You now own " + logs + " log.");
-        } else {
-            $("#logs").html("You now own " + logs + " logs.");
-        }
+        $("#logs").html("You now own " + logs + " logs.");
+        $("#planks").html("You now own " + planks + " planks."); // Display planks
     }
 
     $("#sell1").click(function() {
@@ -64,6 +186,8 @@ $(document).ready(function() {
             money += logPrice;
             changeInventory();
             changeMarket();
+            updateLogPile();
+
         }
     });
 
@@ -73,6 +197,8 @@ $(document).ready(function() {
             money += 10 * logPrice;
             changeInventory();
             changeMarket();
+            updateLogPile();
+
         }
     });
 
@@ -82,6 +208,8 @@ $(document).ready(function() {
             logs = 0;
             changeInventory();
             changeMarket();
+            updateLogPile();
+
         }
     });
 
@@ -96,11 +224,11 @@ $(document).ready(function() {
         } else {
             $("#sell1").css("display", "none");
         }
-        if (logs >= 10) {
-            $("#sell10").css("display", "block");
+        if (logs >= 1 && !sawmillActive) {
+            $("#sawmill").css("display", "block");
         } else {
-            $("#sell10").css("display", "none");
-        }
+            $("#sawmill").css("display", "none");
+        } 
     }
 
     function switchMenu(menu) {
