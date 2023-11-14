@@ -81,26 +81,7 @@ $(document).ready(function() {
             }
         }, autoSellerInterval);
     }
-    // function addLogImages(logCount) {
-    //     const logContainer = $(".log-container");
-    //     logContainer.empty();
-    
-    //     for (let i = 0; i < logCount; i++) {
-    //         const logImage = $("<img>").attr("src", "path/to/log-image.png").addClass("log-image");
-    //         logContainer.append(logImage);
-    //     }
-    // }
-    
-    // function removeLogImages(logCount) {
-    //     const logContainer = $(".log-container");
-    //     const logImages = logContainer.find(".log-image");
-    
-    //     for (let i = 0; i < logCount; i++) {
-    //         logImages.eq(i).remove();
-    //     }
-    // }
-    
-    // Example usage to add log images (call this when logs accumulate)
+
 
     $("#autoseller").click(function() {
         // Define the cost of the autoseller
