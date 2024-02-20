@@ -57,7 +57,7 @@ function levelName(level) {
     } else if (level < 95 || level > 100) {
         return "Mythical";
     } else {
-        return "Transcendent"; // Default level name for levels higher than 90
+        return "Transcendent"; // Default level name for levels higher than 99
     }
 }
 
@@ -163,7 +163,7 @@ wipeLocalStorage() {
     this.staminaRegenRate = 5;
     this.mana = 50; // Default mana
     this.health = 100; // Default health
-    this.updatePlayerStats(); // Update player stats after resetting
+    this.updatePlayerStats();
 }
 
 
@@ -376,9 +376,9 @@ function handleAction(action) {
                         player.currentXP += 7;
                         player.playerMoney += 15;
                         showMessage("Cooked a meal successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
+                        player.timer = 10; 
                     } else {
-                        player.timer += 15; // add 15 seconds to the timer
+                        player.timer += 15; 
                         showMessage("Failed to cook the meal. Adding time to the timer.");
                     }
                     graphics.updateButtonColor('cook-meal', success); // Update button color based on action result
@@ -404,9 +404,9 @@ function handleAction(action) {
                         player.currentXP += 10;
                         player.playerMoney += 20;
                         showMessage("Studied for the exam successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
+                        player.timer = 10; 
                     } else {
-                        player.timer += 17; // add 17 seconds to the timer
+                        player.timer += 17;
                         showMessage("Failed to study for the exam. Adding time to the timer.");
                     }
                     graphics.updateButtonColor('study-exam', success); // Update button color based on action result
@@ -433,9 +433,9 @@ function handleAction(action) {
                         player.currentXP += 25;
                         player.playerMoney += 20;
                         showMessage("Practiced coding successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
+                        player.timer = 10; 
                     } else {
-                        player.timer += 14; // add 14 seconds to the timer
+                        player.timer += 14; 
                         showMessage("Failed to practice coding. Adding time to the timer.");
                     }
                     graphics.updateButtonColor('practice-coding', success); // Update button color based on action result
@@ -461,9 +461,9 @@ function handleAction(action) {
                         player.currentXP += 25;
                         player.playerMoney += 5;
                         showMessage("Took a walk successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
+                        player.timer = 10; 
                     } else {
-                        player.timer += 11; // add 11 seconds to the timer
+                        player.timer += 11; 
                         showMessage("Failed to take a walk. Adding time to the timer.");
                     }
                     graphics.updateButtonColor('take-walk', success); // Update button color based on action result
@@ -489,9 +489,9 @@ function handleAction(action) {
                         player.currentXP += 40;
                         player.playerMoney += 0;
                         showMessage("Meditated successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
+                        player.timer = 10; 
                     } else {
-                        player.timer += 13; // add 13 seconds to the timer
+                        player.timer += 13; 
                         showMessage("Failed to meditate. Adding time to the timer.");
                     }
                     graphics.updateButtonColor('meditate', success); // Update button color based on action result
@@ -637,12 +637,11 @@ player.displayInventory();
 // Update UI
 player.updatePlayerStats();
 graphics.updateStatsColors(player);
-graphics.updateInventory(player); // Add this line to update inventory display
-
+graphics.updateInventory(player);
 
 // Battlebutt
 document.getElementById('start-battle').addEventListener('click', () => {
-    const enemy = generateRandomEnemy(); // Generate a random enemy
+    const enemy = generateRandomEnemy();
     handleBattle(player, enemy);
 });
 
@@ -681,8 +680,7 @@ document.getElementById('sleep').addEventListener('click', function() {
 document.getElementById('toggle-idle').addEventListener('click', () => {
     player.toggleIdle();
 });
-// document.getElementById('save').addEventListener('click', player.saveDataToLocalStorage);
-// Add event listener to the clear save button
+
 document.getElementById('clearData').addEventListener('click', function() {
     player.wipeLocalStorage();
     location.reload(); // Reload the page after clearing the data
