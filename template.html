@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idle Hakiko</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/98.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"  crossorigin="anonymous">
+
+    <style>
+        /* body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #stats, #actions {
+            background-color: #fff;
+            border: 5px solid #ff0000;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        button {
+            background-color: #ffcc00;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        } */
+
+        button:hover {
+            background-color: #ffd700;
+        }
+        .message { 
+            height:15px;
+        }
+
+        .stats { 
+            border: 5px solid red;
+        }
+        .clearData {
+            color: red;
+        }
+        .success {
+            background-color: green;
+        }
+        .fail {
+            background-color: red;
+        }
+        .countdown-timer, .message {
+            text-shadow: 1px 1px 2px black;
+        }
+    </style>
+</head>
+<body>
+    <div class="title-bar">
+        <div class="title-bar-text">Idle Hakiko</div>
+        <div class="title-bar-controls">
+    
+        </div>
+      </div>
+<div class="window-body">
+  
+    <menu role="tablist">
+      <li role="tab" aria-selected="true"><a href="#tabs">Desktop</a></li>
+      <li role="tab"><a href="#tabs">My computer</a></li>
+      <li role="tab"><a href="#tabs">Control panel</a></li>
+      <li role="tab"><a href="#tabs">Devices manager</a></li>
+      <li role="tab"><a href="#tabs">Hardware profiles</a></li>
+      <li role="tab"><a href="#tabs">Performance</a></li>
+    </menu>
+    
+    <div class="window" role="tabpanel">
+      <div class="window-body">
+        <!-- <div class="window" style="width: 300px"> -->
+
+            <div class="window-body">
+                <div id="stats">
+                  <p>Current Level: <span id="current-level" style="color: green;">1</span></p>
+                  <p>XP to Next Level: <span id="xp-to-next-level">50</span></p>
+                  <p>Action Points: <span id="action-points">10</span></p>
+                  <p>Countdown Timer: <span id="countdown-timer" style="color: red; text-shadow: 1px 1px 1px grey; font-size: 15px;">10</span> seconds</p>
+                  <p>Current XP: <span id="current-xp">0</span></p>
+                  <p>Player Money: <span id="player-money">0</span></p>
+                  <p id="message" class="message"></p>
+              </div>
+              <p>You're in your room. There's so much room for activities!</p>
+
+            
+            
+            
+            <br>
+
+        </div>
+    <!-- </div> -->
+      </div>
+    </div>
+  </div>
+  <button id="save">Save</button>
+  <button id="clearData" class="clearData">Clear Save</button>
+    <script src="app.js"></script>
+</body>
+</html>

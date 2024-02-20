@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idle Hakiko</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/98.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"  crossorigin="anonymous">
+
+    <style>
+        /* body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #stats, #actions {
+            background-color: #fff;
+            border: 5px solid #ff0000;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        button {
+            background-color: #ffcc00;
+            color: #333;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        } */
+
+        button:hover {
+            background-color: #ffd700;
+        }
+        .message { 
+            height:15px;
+        }
+
+       .fa-exclamation {
+            margin-top:45px;
+            color: red;
+        }
+        .success {
+            background-color: green;
+        }
+        .fail {
+            background-color: red;
+        }
+        .countdown-timer, .message {
+            text-shadow: 1px 1px 2px black;
+        }
+        #bedroomImage {
+            height: 55%;
+            position: absolute;
+            justify-content: space-between;
+            z-index: -1;
+            margin-left: 55%;
+            border: solid grey 2px;
+        }
+        #shopImage {
+            width:200px;
+            position: flex;
+            justify-content: space-between;
+            z-index: -1;
+            border: solid grey 2px;
+        }
+        #shopText {
+            position: flex;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="window-body">
+
+    <div class="title-bar">
+        <div class="title-bar-text">Idle Hakiko</div>
+        <div class="title-bar-controls"></div>
+    </div>
+    
+    <div class="window-body">
+        <menu role="tablist">
+            <li role="tab" aria-selected="true"><a href="#actions" role="tab" aria-selected="true">Home</a></li>
+            <li role="tab"><a href="#shop" role="tab">Shop</a></li>
+            <li role="tab"><a href="#inventory" role="tab">Inventory</a></li>
+            <li role="tab"><a href="#devices" role="tab">Unused</a></li>
+            <li role="tab"><a href="#profiles" role="tab">Unused</a></li>
+            <li role="tab"><a href="#performance" role="tab">Unused</a></li>
+          </menu>
+        <div id="inventory" class="window" role="tabpanel" aria-hidden="true">
+            <div class="window-body">
+                <p>Inventory content goes here</p>
+
+            </div>
+        </div>
+        <div id="shop" class="window" role="tabpanel" aria-hidden="true">
+            <div class="window-body">
+                <img id="shopImage" src="shop.png" alt="Bedroom Image">
+                <h4 id="shopText">NightStop</h4>
+                <h5 id="shopText">Welcome! We have wares if you have coin.</h5>
+            </div>
+        </div>
+        <div id="actions" class="window" role="tabpanel" aria-hidden="false">
+            <div class="window-body">
+                <img id="bedroomImage" src="bedroom.jpg" alt="Bedroom Image">
+                <div id="stats" class="stats">
+                    <p>Current Level: <span id="current-level" style="color: green;">1</span></p>
+                    <p>XP to Next Level: <span id="xp-to-next-level">50</span></p>
+                    <p>Action Points: <span id="action-points">10</span></p>
+                    <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
+                    <p>Current XP: <span id="current-xp">0</span></p>
+                    <p>Player Money: <span id="player-money">0</span></p>
+                    <p id="message" class="message"></p>
+                </div>
+                <p>You're in your room. There's so much room for activities!</p>
+                <div id="actions-content">
+                <button id="clean-room"><i class="fas fa-broom"></i> Clean Room</button>
+                <button id="wash-dishes"><i class="fas fa-utensils"></i> Wash Dishes</button>
+                <button id="cook-meal"><i class="fas fa-utensil-spoon"></i> Cook Meal</button>
+                <button id="study-exam"><i class="fas fa-book-open"></i> Study Exam</button>
+                <button id="practice-coding"><i class="fas fa-laptop-code"></i> Practice Coding</button>
+                <button id="take-walk"><i class="fas fa-walking"></i> Take a Walk</button>
+                <button id="meditate"><i class="fas fa-praying-hands"></i> Meditate</button>
+                <button id="exercise"><i class="fas fa-dumbbell"></i> Exercise</button>
+                <button id="play-game"><i class="fas fa-gamepad"></i> Play Game</button>
+                <button id="sleep"><i class="fas fa-bed"></i> Sleep</button>
+                <button id="toggle-idle">Toggle Idle Mode</button>
+            </div>
+
+            
+            
+            <br>
+
+        </div>
+    <!-- </div> -->
+      </div>
+      <div id="devices" class="window" role="tabpanel" aria-hidden="true"> <!-- Set aria-hidden to false -->
+        <div class="window-body">
+            <button id="start-battle">Start</button>
+            <div id="stats" class="stats">
+                <p>Current Level: <span id="current-level" style="color: green;">1</span></p>
+                <p>XP to Next Level: <span id="xp-to-next-level">50</span></p>
+                <p>Action Points: <span id="action-points">10</span></p>
+                <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
+                <p>Current XP: <span id="current-xp">0</span></p>
+                <p>Player Money: <span id="player-money">0</span></p>
+                <p>Player Damage: <span id="player-damage">10</span></p>
+                <p>Player Defense: <span id="player-defense">5</span></p>
+                <p>Player Stamina: <span id="player-stamina">100</span></p>
+                <p>Player Mana: <span id="player-mana">50</span></p>
+                <p>Player Health: <span id="player-health">100</span></p>
+            </div>
+        </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- <button id="save">Save</button> -->
+  <button id="clearData" class="fas fa-exclamation"> Clear Save</button>
+    <script type="module" src="app.js"></script>
+    <script>
+        // Add event listener for the beforeunload event
+        window.addEventListener('beforeunload', function(event) {
+            // Call saveDataToLocalStorage() to save the player's data
+            player.saveDataToLocalStorage();
+        });
+    </script>
+</body>
+</html>
