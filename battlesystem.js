@@ -1,42 +1,32 @@
+import { player } from "/app.js";
+
 export class Enemy {
-    constructor(name, health, attackPower, defense, staminaRegenRate, mana) {
+    constructor(name, health, attack, defense, staminaRegenRate, mana) {
         this.name = name;
         this.health = health;
-        this.attackPower = attackPower;
+        this.attack = attack;
         this.defense = defense;
         this.staminaRegenRate = staminaRegenRate;
         this.mana = mana;
     }
 
-    attack() {
+    performAttack() {
         // Logic for enemy attack
         // For simplicity, let's assume the enemy always attacks with its full attack power
-        return this.attackPower;
+        return this.attack;
     }
 
     takeDamage(damage) {
         // Deduct health considering enemy's defense
         const actualDamage = Math.max(damage - this.defense, 0);
         this.health -= actualDamage;
+        // Check if the enemy is defeated
         if (this.health <= 0) {
-            // Enemy defeated
+            console.log(`${this.name} has been defeated!`);
             return true;
         }
         return false;
     }
-}
-
-export function generateRandomEnemy() {
-    // Logic to generate random enemies based on player's progress or level
-    // You can customize this based on your game's requirements
-    const enemies = [
-        new Enemy("Anxiety", 5, 2, 1, 2, 20),
-        new Enemy("Depression", 6, 3, 2, 3, 30),
-        new Enemy("Self-Doubt", 7, 4, 3, 4.5, 25)
-    ];
-    // Randomly select an enemy from the list
-    const randomIndex = Math.floor(Math.random() * enemies.length);
-    return enemies[randomIndex];
 }
 
 export async function handleBattle(player, enemy) {
@@ -46,7 +36,7 @@ export async function handleBattle(player, enemy) {
 
     while (true) {
         // Player's turn
-        const playerAttack = Math.max(0, player.damage - enemy.defense); // Calculate player's effective attack power
+        const playerAttack = Math.max(0, player.damage - enemy.defense); // Corrected calculation
         enemy.takeDamage(playerAttack);
         console.log(`You attack ${enemy.name} for ${playerAttack} damage!`);
 
@@ -68,7 +58,7 @@ export async function handleBattle(player, enemy) {
         }
 
         // Enemy's turn
-        const enemyAttack = Math.max(0, enemy.attackPower - player.defense); // Calculate enemy's effective attack power
+        const enemyAttack = Math.max(0, enemy.attack - player.defense); // Calculate enemy's effective attack power
         // Deduct player's health based on enemy's attack
         // For simplicity, let's assume the player's health is deducted directly without any defense mechanism
         player.health -= enemyAttack;
@@ -86,4 +76,19 @@ export async function handleBattle(player, enemy) {
     console.log(`Battle ended after ${elapsedTime} seconds.`);
     console.log(`Player's remaining health: ${player.health}`);
     console.log(`Player's remaining stamina: ${player.stamina}`);
+}
+// SPECIFICALLY SELF DOUBT IS INVINCIBLE. FIX
+
+export function generateRandomEnemy() {
+    // Logic to generate random enemies based on player's progress or level
+    // You can customize this based on your game's requirements
+    const enemies = [
+        new Enemy("Anger", 20, 1, 1, 1, 10),
+        new Enemy("Anxiety", 5, 2, 1, 2, 20),
+        new Enemy("Depression", 6, 3, 2, 3, 30),
+        new Enemy("Self-Doubt", 7, 4, 3, 4.5, 25)
+    ];
+    // Randomly select an enemy from the list
+    const randomIndex = Math.floor(Math.random() * enemies.length);
+    return enemies[randomIndex];
 }

@@ -61,7 +61,7 @@ function levelName(level) {
     }
 }
 
-class player {
+export class player {
     
     constructor(graphics) {
         
@@ -94,7 +94,7 @@ class player {
         // Initialize additional player properties
         this.idleEnabled = false; // Default to idle function disabled
 
-        this.damage = 1; // Default damage
+        this.damage = 5; // Default damage
         this.defense = 1; // Default defense
         this.stamina = 100; // Default stamina
         this.staminaRegenRate = 5; // Default stamina regeneration rate per turn
