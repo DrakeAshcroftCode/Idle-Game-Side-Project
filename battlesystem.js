@@ -82,23 +82,23 @@ export async function handleBattle(player, enemy) {
 }
 // SPECIFICALLY SELF DOUBT IS INVINCIBLE. FIX
 
-playerAttacks = [
-    {
-        name: "Power Attack",
-        staminaCost: 3,
-        damage: 5
-    },
-    {
-        name: "Normal Attack",
-        staminaCost: 1,
-        damage: 2
-    },
-    {
-        name: "Special Attack",
-        staminaCost: 2,
-        damage: 3
-    }
-];
+// playerAttacks = [
+//     {
+//         name: "Power Attack",
+//         staminaCost: 3,
+//         damage: 5
+//     },
+//     {
+//         name: "Normal Attack",
+//         staminaCost: 1,
+//         damage: 2
+//     },
+//     {
+//         name: "Special Attack",
+//         staminaCost: 2,
+//         damage: 3
+//     }
+// ];
 
 export function generateRandomEnemy() {
     // Logic to generate random enemies based on player's progress or level
