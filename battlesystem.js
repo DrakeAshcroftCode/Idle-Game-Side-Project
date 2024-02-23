@@ -63,7 +63,6 @@ export async function handleBattle(player, enemy) {
         // Enemy's turn
         const enemyAttack = Math.max(0, enemy.attack - player.defense); // Calculate enemy's effective attack power
         // Deduct player's health based on enemy's attack
-        // For simplicity, let's assume the player's health is deducted directly without any defense mechanism
         player.takeDamage(enemy.attack);
         console.log(`${enemy.name} attacks you for ${enemyAttack} damage!`);
         console.log(enemy.health)
@@ -102,7 +101,6 @@ export async function handleBattle(player, enemy) {
 
 export function generateRandomEnemy() {
     // Logic to generate random enemies based on player's progress or level
-    // You can customize this based on your game's requirements
     const enemies = [
         new Enemy("Anger", 20, 1, 1, 1, 10),
         new Enemy("Anxiety", 5, 2, 1, 2, 20),
