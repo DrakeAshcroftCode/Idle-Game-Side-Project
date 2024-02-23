@@ -94,18 +94,30 @@ export class player {
         // Initialize additional player properties
         this.idleEnabled = false; // Default to idle function disabled
 
-        this.damage = 5; // Default damage
+        this.damage = 3; // Default damage
         this.defense = 1; // Default defense
-        this.stamina = 100; // Default stamina
-        this.staminaRegenRate = 5; // Default stamina regeneration rate per turn
-        this.mana = 50; // Default mana
-        this.health = 100; // Default health
+        this.stamina = 10; // Default stamina
+        this.staminaRegenRate = 1; // Default stamina regeneration rate per turn
+        this.mana = 10; // Default mana
+        this.health = 10; // Default health
     }
 
     toggleIdle() {
         this.idleEnabled = !this.idleEnabled;
         showMessage(`Idle function ${this.idleEnabled ? 'enabled' : 'disabled'}.`);
     }
+    takeDamage(damage) {
+        // Deduct health considering enemy's defense
+        const actualDamage = Math.max(damage - this.defense, 0);
+        this.health -= actualDamage;
+        // Check if the enemy is defeated
+        if (this.health <= 0) {
+            console.log(`${this.name} has been defeated!`);
+            return true;
+        }
+        return false;
+    }
+
     updatePlayerStats() {
         let levelDisplayName = levelName(this.level);;
 
@@ -157,12 +169,12 @@ wipeLocalStorage() {
     this.playerMoney = 0;
     this.actionSuccessRate = 0.5;
     this.inventory = [];
-    this.damage = 10; // Default damage
-    this.defense = 5; // Default defense
-    this.stamina = 100; // Default stamina
-    this.staminaRegenRate = 5;
-    this.mana = 50; // Default mana
-    this.health = 100; // Default health
+    this.damage = 1; // Default damage
+    this.defense = 1; // Default defense
+    this.stamina = 10; // Default stamina
+    this.staminaRegenRate = 1;
+    this.mana = 10; // Default mana
+    this.health = 10; // Default health
     this.updatePlayerStats();
 }
 
