@@ -12,7 +12,7 @@ export class Enemy {
 
     performAttack() {
         // Logic for enemy attack
-        // For simplicity, let's assume the enemy always attacks with its full attack power
+        // For simplicity,'s assume the enemy always attacks with its full attack power
         return this.attack;
     }
 
@@ -36,9 +36,9 @@ export async function handleBattle(player, enemy) {
 
     while (true) {
         // Player's turn
-        let playerDamAttack = player.damage - enemy.defense;
-        const playerAttack = Math.max(0, playerDamAttack); // Corrected calculation
-        enemy.takeDamage(playerAttack);
+        // let playerDamAttack = player.damage;
+        const playerAttack = Math.max(0, player.damage - enemy.defense); // Corrected calculation
+        enemy.takeDamage(player.damage);
         console.log(`You attack ${enemy.name} for ${playerAttack} damage!`);
         console.log("your health: " + player.health)
         console.log("enemy defense: " + enemy.defense)
@@ -64,12 +64,12 @@ export async function handleBattle(player, enemy) {
         const enemyAttack = Math.max(0, enemy.attack - player.defense); // Calculate enemy's effective attack power
         // Deduct player's health based on enemy's attack
         // For simplicity, let's assume the player's health is deducted directly without any defense mechanism
-        player.takeDamage(enemyAttack);
+        player.takeDamage(enemy.attack);
         console.log(`${enemy.name} attacks you for ${enemyAttack} damage!`);
         console.log(enemy.health)
         if (player.health <= 0) {
             console.log(`${enemy.name} defeated you! Game over.`);
-            // Add logic for game over
+            // Add logic for gold loss
             break; // Exit the battle loop
         }
     }
