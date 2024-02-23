@@ -644,7 +644,6 @@ setInterval(() => {
 const item = new Item('Health Potion', 'Restores health', {
     health: 10
 });
-player.addToInventory(item);
 player.displayInventory();
 // Update UI
 player.updatePlayerStats();
