@@ -10,6 +10,17 @@ const ACTION_POINT_PER_LEVEL = 3;
 const BASE_ACTION_TIMER = 6;
 const REST_TIMER = 20;
 
+const UPGRADE_EFFECTS = {
+    timerReductionBadge: {
+        resetReduction: 1,
+        label: '-1s action timers'
+    },
+    focusCharm: {
+        penaltyReduction: 2,
+        label: '-2s failure penalty'
+    }
+};
+
 // Core action configuration for easy tuning
 const ACTION_CONFIG = {
     cleanRoom: {
@@ -153,13 +164,28 @@ function scaleTiming(value, tier) {
     return Math.round(value * multiplier);
 }
 
+function getTimerModifiers() {
+    const ownedUpgrades = player?.upgrades || {};
+    return Object.entries(UPGRADE_EFFECTS).reduce((acc, [key, effect]) => {
+        if (ownedUpgrades[key]) {
+            acc.resetReduction += effect.resetReduction || 0;
+            acc.penaltyReduction += effect.penaltyReduction || 0;
+            acc.labels.push(effect.label);
+        }
+        return acc;
+    }, { resetReduction: 0, penaltyReduction: 0, labels: [] });
+}
+
 function getActionTimers(config) {
     const tier = getLevelTier(player?.level || 1);
     const baseReset = config.timerReset ?? BASE_ACTION_TIMER;
     const basePenalty = config.timerPenalty ?? 0;
+    const { resetReduction, penaltyReduction } = getTimerModifiers();
+    const scaledReset = scaleTiming(baseReset, tier);
+    const scaledPenalty = scaleTiming(basePenalty, tier);
     return {
-        timerReset: scaleTiming(baseReset, tier),
-        timerPenalty: scaleTiming(basePenalty, tier)
+        timerReset: Math.max(0, scaledReset - resetReduction),
+        timerPenalty: Math.max(0, scaledPenalty - penaltyReduction)
     };
 }
 
@@ -177,6 +203,7 @@ const DOM = {
         stamina: document.getElementById('player-stamina'),
         mana: document.getElementById('player-mana'),
         health: document.getElementById('player-health'),
+        timerModifiers: document.getElementById('timer-modifiers'),
     },
     message: document.getElementById('message'),
     toast: document.getElementById('action-toast'),
@@ -311,6 +338,10 @@ export class player {
         this.actionSuccessRate = 0.5;
         this.inventory = [];
         this.activeActionBuff = null;
+        this.upgrades = {
+            timerReductionBadge: false,
+            focusCharm: false
+        };
 
         this.damage = 3; // Default damage
         this.defense = 1; // Default defense
@@ -343,6 +374,10 @@ export class player {
             this.mana = savedData.mana ?? this.mana;
             this.health = savedData.health ?? this.health;
             this.activeActionBuff = null;
+            this.upgrades = {
+                ...this.upgrades,
+                ...(savedData.upgrades || {})
+            };
         } catch (error) {
             console.warn('Could not parse save data; resetting to defaults.', error);
             this.resetToDefaults();
@@ -376,6 +411,13 @@ export class player {
         DOM.stats.stamina.textContent = this.stamina;
         DOM.stats.mana.textContent = this.mana;
         DOM.stats.health.textContent = this.health;
+        if (DOM.stats.timerModifiers) {
+            const { resetReduction, penaltyReduction } = getTimerModifiers();
+            const parts = [];
+            if (resetReduction) parts.push(`-${resetReduction}s action timers`);
+            if (penaltyReduction) parts.push(`-${penaltyReduction}s failure penalty`);
+            DOM.stats.timerModifiers.textContent = parts.length ? parts.join(' | ') : 'None';
+        }
     }
 
     saveDataToLocalStorage() {
@@ -397,7 +439,8 @@ export class player {
             stamina: this.stamina,
             mana: this.mana,
             health: this.health,
-            staminaRegenRate: this.staminaRegenRate
+            staminaRegenRate: this.staminaRegenRate,
+            upgrades: this.upgrades
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     }
@@ -588,13 +631,16 @@ function renderShopItems() {
         cost.textContent = `Cost: ${item.cost.gold} gold + ${item.cost.essence} essence`;
 
         const button = document.createElement('button');
-        button.textContent = 'Buy';
+        const isUpgradeOwned = item.reward.upgrade && player.upgrades[item.reward.upgrade];
+        button.textContent = isUpgradeOwned ? 'Owned' : 'Buy';
+        button.disabled = Boolean(isUpgradeOwned);
         button.addEventListener('click', () => {
             const result = purchaseItem(player, item.id);
             showMessage(result.message, result.success ? 'success' : 'error');
             if (result.success) {
                 refreshUI();
                 player.saveDataToLocalStorage();
+                renderShopItems();
             }
             renderShopWallet();
         });
