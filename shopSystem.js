@@ -9,11 +9,18 @@ export const SHOP_CATALOG = [
         reward: { items: [{ name: 'Bandage', quantity: 1 }] }
     },
     {
-        id: 'focus-charm',
+        id: 'timer-reduction-badge',
+        name: 'Timer Reduction Badge',
+        description: 'Shaves a second off every action timer. Limited stock!',
+        cost: { gold: 90, essence: 1 },
+        reward: { upgrade: 'timerReductionBadge' }
+    },
+    {
+        id: 'focus-charm-upgrade',
         name: 'Focus Charm',
-        description: 'Aids concentration; worth crafting later.',
-        cost: { gold: 60, essence: 2 },
-        reward: { items: [{ name: 'Focus Charm', quantity: 1 }] }
+        description: 'Keeps you calm under pressure, reducing added time on failure.',
+        cost: { gold: 70, essence: 3 },
+        reward: { upgrade: 'focusCharm' }
     },
     {
         id: 'stamina-tonic',
@@ -41,6 +48,10 @@ export function purchaseItem(player, itemId) {
         return { success: false, message: 'Item not found.' };
     }
 
+    if (offering.reward.upgrade && player.upgrades?.[offering.reward.upgrade]) {
+        return { success: false, message: 'Already purchased.' };
+    }
+
     const wallet = { gold: player.playerMoney, essence: player.shadowEssence };
     if (!canAfford(offering.cost, wallet)) {
         return { success: false, message: 'Not enough currency.' };
@@ -51,6 +62,11 @@ export function purchaseItem(player, itemId) {
 
     if (offering.reward.items) {
         addItemsToInventory(player.inventory, offering.reward.items);
+    }
+
+    if (offering.reward.upgrade) {
+        player.upgrades ??= {};
+        player.upgrades[offering.reward.upgrade] = true;
     }
 
     return { success: true, message: `${offering.name} purchased!` };
