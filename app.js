@@ -25,9 +25,9 @@ const UPGRADE_EFFECTS = {
 // Core action configuration for easy tuning
 const ACTION_CONFIG = {
     cleanRoom: {
-        xp: 8,
-        money: 10,
-        timerReset: BASE_ACTION_TIMER,
+        xp: 12,
+        money: 14,
+        timerReset: 7,
         timerPenalty: 3,
         apCost: 1,
         successModifier: 0,
@@ -37,9 +37,9 @@ const ACTION_CONFIG = {
         buttonId: 'clean-room'
     },
     washDishes: {
-        xp: 6,
-        money: 7,
-        timerReset: BASE_ACTION_TIMER,
+        xp: 10,
+        money: 12,
+        timerReset: 7,
         timerPenalty: 3,
         apCost: 1,
         successModifier: 0,
@@ -49,9 +49,9 @@ const ACTION_CONFIG = {
         buttonId: 'wash-dishes'
     },
     cookMeal: {
-        xp: 12,
-        money: 15,
-        timerReset: BASE_ACTION_TIMER,
+        xp: 20,
+        money: 24,
+        timerReset: 8,
         timerPenalty: 4,
         apCost: 1,
         successModifier: -0.05,
@@ -61,9 +61,9 @@ const ACTION_CONFIG = {
         buttonId: 'cook-meal'
     },
     studyExam: {
-        xp: 16,
-        money: 20,
-        timerReset: BASE_ACTION_TIMER,
+        xp: 28,
+        money: 28,
+        timerReset: 8,
         timerPenalty: 4,
         apCost: 1,
         successModifier: -0.1,
@@ -73,9 +73,9 @@ const ACTION_CONFIG = {
         buttonId: 'study-exam'
     },
     practiceCoding: {
-        xp: 30,
-        money: 22,
-        timerReset: BASE_ACTION_TIMER,
+        xp: 50,
+        money: 32,
+        timerReset: 9,
         timerPenalty: 4,
         apCost: 1,
         successModifier: -0.25,
@@ -85,9 +85,9 @@ const ACTION_CONFIG = {
         buttonId: 'practice-coding'
     },
     takeWalk: {
-        xp: 20,
-        money: 6,
-        timerReset: BASE_ACTION_TIMER,
+        xp: 26,
+        money: 10,
+        timerReset: 7,
         timerPenalty: 2,
         apCost: 1,
         successModifier: -0.01,
@@ -97,9 +97,9 @@ const ACTION_CONFIG = {
         buttonId: 'take-walk'
     },
     meditate: {
-        xp: 28,
+        xp: 34,
         money: 0,
-        timerReset: BASE_ACTION_TIMER,
+        timerReset: 7,
         timerPenalty: 2,
         apCost: 1,
         successModifier: 0.25,
@@ -109,9 +109,9 @@ const ACTION_CONFIG = {
         buttonId: 'meditate'
     },
     exercise: {
-        xp: 24,
+        xp: 32,
         money: 0,
-        timerReset: BASE_ACTION_TIMER,
+        timerReset: 8,
         timerPenalty: 4,
         apCost: 1,
         successModifier: -0.25,
@@ -121,9 +121,9 @@ const ACTION_CONFIG = {
         buttonId: 'exercise'
     },
     playGame: {
-        xp: 5,
-        money: 25,
-        timerReset: BASE_ACTION_TIMER,
+        xp: 8,
+        money: 30,
+        timerReset: 7,
         timerPenalty: 4,
         apCost: 1,
         successModifier: 0.4,
@@ -131,6 +131,32 @@ const ACTION_CONFIG = {
         failureMessage: "Failed to play the game. Adding time to the timer.",
         idleEligible: true,
         buttonId: 'play-game'
+    },
+    organizeCloset: {
+        xp: 55,
+        money: 50,
+        timerReset: 10,
+        timerPenalty: 4,
+        apCost: 1,
+        successModifier: -0.15,
+        unlockLevel: 8,
+        successMessage: "Organized the closet and found some valuables!",
+        failureMessage: "Got overwhelmed organizing the closet. It took longer than expected.",
+        idleEligible: true,
+        buttonId: 'organize-closet'
+    },
+    homeRenovation: {
+        xp: 80,
+        money: 95,
+        timerReset: 12,
+        timerPenalty: 5,
+        apCost: 1,
+        successModifier: -0.2,
+        unlockLevel: 18,
+        successMessage: "Finished a home renovation project!",
+        failureMessage: "The renovation stalled and set you back.",
+        idleEligible: true,
+        buttonId: 'home-renovation'
     },
     sleep: {
         xp: 2,
@@ -154,6 +180,8 @@ const ACTION_LABELS = {
     meditate: 'Meditate',
     exercise: 'Exercise',
     playGame: 'Play Game',
+    organizeCloset: 'Organize Closet',
+    homeRenovation: 'Home Renovation',
     sleep: 'Sleep'
 };
 
@@ -167,10 +195,17 @@ const ACTION_ICONS = {
     meditate: 'fa-praying-hands',
     exercise: 'fa-dumbbell',
     playGame: 'fa-gamepad',
+    organizeCloset: 'fa-box-open',
+    homeRenovation: 'fa-tools',
     sleep: 'fa-bed'
 };
 
 const STORAGE_KEY = 'idle-hakiko-save';
+
+function isActionUnlocked(config, currentLevel = player?.level ?? 1) {
+    if (!config) return false;
+    return !config.unlockLevel || currentLevel >= config.unlockLevel;
+}
 
 function getLevelTier(level) {
     if (level < 15) {
@@ -714,9 +749,13 @@ function createActionCard(key, config) {
     const successInfo = document.createElement('span');
     successInfo.classList.add('pill');
     successInfo.dataset.meta = 'success';
+    const unlockInfo = document.createElement('span');
+    unlockInfo.classList.add('pill');
+    unlockInfo.dataset.meta = 'unlock';
     meta.appendChild(apCost);
     meta.appendChild(timerInfo);
     meta.appendChild(successInfo);
+    meta.appendChild(unlockInfo);
 
     const progressLabel = document.createElement('div');
     progressLabel.classList.add('action-progress__label');
@@ -728,7 +767,8 @@ function createActionCard(key, config) {
 
     const button = document.createElement('button');
     button.id = config.buttonId;
-    button.innerHTML = `<i class="fas ${ACTION_ICONS[key] || ''}"></i> ${ACTION_LABELS[key] || key}`;
+    button.dataset.defaultLabel = `<i class="fas ${ACTION_ICONS[key] || ''}"></i> ${ACTION_LABELS[key] || key}`;
+    button.innerHTML = button.dataset.defaultLabel;
     button.addEventListener('click', () => handleAction(key));
 
     card.appendChild(header);
@@ -745,7 +785,9 @@ function createActionCard(key, config) {
         progressBar,
         progressLabel,
         timerInfo,
-        successInfo
+        successInfo,
+        unlockInfo,
+        button
     };
 }
 
@@ -762,6 +804,28 @@ function updateActionCards() {
     Object.entries(actionCardElements).forEach(([key, elements]) => {
         const config = ACTION_CONFIG[key];
         if (!config) return;
+        const unlocked = isActionUnlocked(config);
+
+        if (elements.button) {
+            elements.button.disabled = !unlocked;
+            elements.button.innerHTML = unlocked
+                ? elements.button.dataset.defaultLabel
+                : `Unlocks at Lv ${config.unlockLevel}`;
+        }
+
+        if (elements.unlockInfo) {
+            elements.unlockInfo.textContent = config.unlockLevel
+                ? `${unlocked ? 'Req met' : 'Req'}: Lv ${config.unlockLevel}`
+                : 'Req: None';
+        }
+
+        if (!unlocked) {
+            elements.progressBar.style.width = '0%';
+            elements.progressLabel.textContent = `Unlocks at level ${config.unlockLevel}`;
+            elements.timerInfo.textContent = 'Timer: Locked';
+            elements.successInfo.textContent = 'Success: Locked';
+            return;
+        }
         const { timerReset } = getActionTimers(config);
         const resetTime = timerReset || 1;
         const remaining = player.timer;
@@ -848,6 +912,10 @@ window.addEventListener('beforeunload', () => {
 
 function canPerformAction(actionKey, config) {
     if (!config) return false;
+    if (!isActionUnlocked(config)) {
+        showMessage(`Requires level ${config.unlockLevel} to perform.`, 'error');
+        return false;
+    }
     if (config.apThreshold !== undefined && player.actionPoints > config.apThreshold) {
         showMessage("You aren't tired! (Must have less than 3 AP.)", 'error');
         return false;
@@ -983,7 +1051,7 @@ setInterval(() => {
             }
 
             const highValueActions = Object.entries(ACTION_CONFIG)
-                .filter(([, config]) => config.idleEligible && player.actionPoints >= (config.apCost ?? 0))
+                .filter(([, config]) => config.idleEligible && isActionUnlocked(config) && player.actionPoints >= (config.apCost ?? 0))
                 .map(([key, config]) => {
                     const { timerReset } = getActionTimers(config);
                     const xpPerSecond = (config.xp || 0) / Math.max(1, timerReset || BASE_ACTION_TIMER);
