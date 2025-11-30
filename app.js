@@ -1,5 +1,135 @@
 import { startBattle, getEnemyPreview } from '/battlesystem.js';
 
+// Progression & pacing constants
+const BASE_XP_TO_NEXT_LEVEL = 75;
+const LEVEL_XP_GROWTH = 1.6;
+const XP_GAIN_GROWTH = 1.1;
+const ACTION_POINT_PER_LEVEL = 3;
+const BASE_ACTION_TIMER = 10;
+const REST_TIMER = 20;
+
+// Core action configuration for easy tuning
+const ACTION_CONFIG = {
+    cleanRoom: {
+        xp: 8,
+        money: 10,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 11,
+        apCost: 1,
+        successModifier: 0,
+        successMessage: "Cleaned the room successfully!",
+        failureMessage: "Failed to clean the room. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'clean-room'
+    },
+    washDishes: {
+        xp: 6,
+        money: 7,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 13,
+        apCost: 1,
+        successModifier: 0,
+        successMessage: "Washed the dishes successfully!",
+        failureMessage: "Failed to wash the dishes. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'wash-dishes'
+    },
+    cookMeal: {
+        xp: 12,
+        money: 15,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 15,
+        apCost: 1,
+        successModifier: -0.05,
+        successMessage: "Cooked a meal successfully!",
+        failureMessage: "Failed to cook the meal. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'cook-meal'
+    },
+    studyExam: {
+        xp: 16,
+        money: 20,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 17,
+        apCost: 1,
+        successModifier: -0.1,
+        successMessage: "Studied for the exam successfully!",
+        failureMessage: "Failed to study for the exam. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'study-exam'
+    },
+    practiceCoding: {
+        xp: 30,
+        money: 22,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 14,
+        apCost: 1,
+        successModifier: -0.25,
+        successMessage: "Practiced coding successfully!",
+        failureMessage: "Failed to practice coding. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'practice-coding'
+    },
+    takeWalk: {
+        xp: 20,
+        money: 6,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 11,
+        apCost: 1,
+        successModifier: -0.01,
+        successMessage: "Took a walk successfully!",
+        failureMessage: "Failed to take a walk. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'take-walk'
+    },
+    meditate: {
+        xp: 28,
+        money: 0,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 13,
+        apCost: 1,
+        successModifier: 0.25,
+        successMessage: "Meditated successfully!",
+        failureMessage: "Failed to meditate. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'meditate'
+    },
+    exercise: {
+        xp: 24,
+        money: 0,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 16,
+        apCost: 1,
+        successModifier: -0.25,
+        successMessage: "Exercised successfully!",
+        failureMessage: "Failed to exercise. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'exercise'
+    },
+    playGame: {
+        xp: 5,
+        money: 25,
+        timerReset: BASE_ACTION_TIMER,
+        timerPenalty: 20,
+        apCost: 1,
+        successModifier: 0.4,
+        successMessage: "Played a game successfully!",
+        failureMessage: "Failed to play the game. Adding time to the timer.",
+        idleEligible: true,
+        buttonId: 'play-game'
+    },
+    sleep: {
+        xp: 2,
+        money: 0,
+        timerReset: REST_TIMER,
+        apRestore: 10,
+        apThreshold: 3,
+        successMessage: "You had a good night's rest!",
+        idleEligible: false,
+        buttonId: 'sleep'
+    }
+};
+
 
 
 // Function to handle tab navigation
@@ -81,10 +211,10 @@ export class player {
         } else {
             this.level = 1;
             this.maxLevel = 100;
-            this.xpToNextLevel = 50;
+            this.xpToNextLevel = BASE_XP_TO_NEXT_LEVEL;
             this.baseXPMultiplier = 1;
             this.actionPoints = 10;
-            this.timer = 10;
+            this.timer = BASE_ACTION_TIMER;
             this.currentXP = 0;
             this.playerMoney = 0;
             this.actionSuccessRate = 0.5;
@@ -150,27 +280,27 @@ export class player {
         localStorage.setItem('savedData', JSON.stringify(dataToSave));
     }
 
-wipeLocalStorage() {
-    localStorage.removeItem('savedData');
-    // Reset player properties to default values
-    this.level = 1;
-    this.maxLevel = 100;
-    this.xpToNextLevel = 50;
-    this.baseXPMultiplier = 1;
-    this.actionPoints = 10;
-    this.timer = 10;
-    this.currentXP = 0;
-    this.playerMoney = 0;
-    this.actionSuccessRate = 0.5;
-    this.inventory = [];
-    this.damage = 1; // Default damage
-    this.defense = 1; // Default defense
-    this.stamina = 10; // Default stamina
-    this.staminaRegenRate = 1;
-    this.mana = 10; // Default mana
-    this.health = 10; // Default health
-    this.updatePlayerStats();
-}
+    wipeLocalStorage() {
+        localStorage.removeItem('savedData');
+        // Reset player properties to default values
+        this.level = 1;
+        this.maxLevel = 100;
+        this.xpToNextLevel = BASE_XP_TO_NEXT_LEVEL;
+        this.baseXPMultiplier = 1;
+        this.actionPoints = 10;
+        this.timer = BASE_ACTION_TIMER;
+        this.currentXP = 0;
+        this.playerMoney = 0;
+        this.actionSuccessRate = 0.5;
+        this.inventory = [];
+        this.damage = 1; // Default damage
+        this.defense = 1; // Default defense
+        this.stamina = 10; // Default stamina
+        this.staminaRegenRate = 1;
+        this.mana = 10; // Default mana
+        this.health = 10; // Default health
+        this.updatePlayerStats();
+    }
 
 
 
@@ -182,21 +312,19 @@ wipeLocalStorage() {
     levelUp() {
         if (this.level < this.maxLevel) {
             this.level += 1;
-            this.xpToNextLevel *= 2; // Double the XP needed for each subsequent level
-            this.baseXPMultiplier *= 1.5; // Increase the player's XP gain by 50% for each level
-            this.actionPoints += 5; // Give the player an additional action point per level
-            levelName()
+            this.xpToNextLevel = Math.floor(this.xpToNextLevel * LEVEL_XP_GROWTH);
+            this.baseXPMultiplier = parseFloat((this.baseXPMultiplier * XP_GAIN_GROWTH).toFixed(2));
+            this.actionPoints += ACTION_POINT_PER_LEVEL;
+            levelName(this.level);
         }
     }
 
     checkLevelUp() {
-        if (this.currentXP >= this.xpToNextLevel) {
-            let leftOver = this.currentXP - this.xpToNextLevel;
-            this.currentXP = leftOver; // Set currentXP to the leftover XP after leveling up
-            leftOver = 0; // Reset the leftover XP
+        while (this.currentXP >= this.xpToNextLevel && this.level < this.maxLevel) {
+            this.currentXP -= this.xpToNextLevel;
             this.levelUp();
-            this.updatePlayerStats();
-                }
+        }
+        this.updatePlayerStats();
     }
 
     addToInventory(item) {
@@ -225,7 +353,9 @@ function showFirstTabContent() {
     const firstTabLink = document.querySelector('menu li:first-child a');
     if (firstTabLink) {
         firstTabLink.click(); // Simulate a click event on the first tab link
-        player.timer = 10; // Reset the timer to its default value
+        if (typeof player !== 'undefined') {
+            player.timer = BASE_ACTION_TIMER; // Reset the timer to its default value
+        }
     }
 }
 
@@ -309,303 +439,76 @@ function showMessage(message) {
 
 // COMBAT SYSTEM
 
-
-
-
-
-
-
-// Handle player actions
-function handleAction(action) {
-    switch (action) {
-        case 'cleanRoom':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate);
-                    if (success) {
-                        player.currentXP += 5;
-                        player.playerMoney += 10;
-                        showMessage("Cleaned the room successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
-                    } else {
-                        player.timer += 11; // add 11 seconds to the timer
-                        showMessage("Failed to clean the room. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('clean-room', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('clean-room').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'washDishes':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate);
-                    if (success) {
-                        player.currentXP += 3;
-                        player.playerMoney += 5;
-                        showMessage("Washed the dishes successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
-                    } else {
-                        player.timer += 13; // add 13 seconds to the timer
-                        showMessage("Failed to wash the dishes. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('wash-dishes', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('wash-dishes').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'cookMeal':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate);
-                    if (success) {
-                        player.currentXP += 7;
-                        player.playerMoney += 15;
-                        showMessage("Cooked a meal successfully!");
-                        player.timer = 10; 
-                    } else {
-                        player.timer += 15; 
-                        showMessage("Failed to cook the meal. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('cook-meal', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('cook-meal').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'studyExam':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate - .1);
-                    if (success) {
-                        player.currentXP += 10;
-                        player.playerMoney += 20;
-                        showMessage("Studied for the exam successfully!");
-                        player.timer = 10; 
-                    } else {
-                        player.timer += 17;
-                        showMessage("Failed to study for the exam. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('study-exam', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('study-exam').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'practiceCoding':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate - .25);
-                    console.log(player.actionSuccessRate);
-                    if (success) {
-                        player.currentXP += 25;
-                        player.playerMoney += 20;
-                        showMessage("Practiced coding successfully!");
-                        player.timer = 10; 
-                    } else {
-                        player.timer += 14; 
-                        showMessage("Failed to practice coding. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('practice-coding', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('practice-coding').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'takeWalk':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate - .01);
-                    if (success) {
-                        player.currentXP += 25;
-                        player.playerMoney += 5;
-                        showMessage("Took a walk successfully!");
-                        player.timer = 10; 
-                    } else {
-                        player.timer += 11; 
-                        showMessage("Failed to take a walk. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('take-walk', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('take-walk').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'meditate':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate + .25);
-                    if (success) {
-                        player.currentXP += 40;
-                        player.playerMoney += 0;
-                        showMessage("Meditated successfully!");
-                        player.timer = 10; 
-                    } else {
-                        player.timer += 13; 
-                        showMessage("Failed to meditate. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('meditate', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('meditate').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'exercise':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate - .25);
-                    if (success) {
-                        player.currentXP += 25;
-                        player.playerMoney += 0;
-                        showMessage("Exercised successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
-                    } else {
-                        player.timer += 16; // add 16 seconds to the timer
-                        showMessage("Failed to exercise. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('exercise', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('exercise').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'playGame':
-            if (player.actionPoints >= 1) {
-                if (player.timer < 1) {
-                    let success = player.playerAction(player.actionSuccessRate + .4);
-                    if (success) {
-                        player.currentXP += 1;
-                        player.playerMoney += 25;
-                        showMessage("Played a game successfully!");
-                        player.timer = 10; // reset timer to 10 seconds on success
-                    } else {
-                        player.timer += 20; // add 20 seconds to the timer
-                        showMessage("Failed to play the game. Adding time to the timer.");
-                    }
-                    graphics.updateButtonColor('play-game', success); // Update button color based on action result
-                    player.actionPoints -= 1; // decrement actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('play-game').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You are out of Action Points!");
-            }
-            break;
-        case 'sleep':
-            if (player.actionPoints <= 3) {
-                if (player.timer < 1) {
-                    let success = true;
-                    if (success) {
-                        player.currentXP += 1;
-                        player.playerMoney += 0;
-                        showMessage("You had a good night's rest!");
-                        player.timer = 20; // reset timer to 20 seconds on success
-                    }
-                    graphics.updateButtonColor('sleep', success); // Update button color based on action result
-                    player.actionPoints = 10; // reset actionPoints
-                    player.updatePlayerStats(); // Update player stats
-                    graphics.updateStatsColors(player); // Update stats colors dynamically
-                    player.saveDataToLocalStorage();
-                    setTimeout(() => {
-                        document.getElementById('sleep').classList.remove('success', 'fail');
-                    }, 2000); // Remove the color class after 2 seconds
-                } else {
-                    showMessage("You cannot perform this action. Timer is not at zero.");
-                }
-            } else {
-                showMessage("You aren't tired! (Must have less than 3 AP.)");
-            }
-            break;
-        default:
-            break;
+function canPerformAction(actionKey, config) {
+    if (!config) return false;
+    if (config.apThreshold !== undefined && player.actionPoints > config.apThreshold) {
+        showMessage("You aren't tired! (Must have less than 3 AP.)");
+        return false;
     }
-
-
+    if (player.actionPoints < (config.apCost || 0)) {
+        showMessage("You are out of Action Points!");
+        return false;
+    }
+    if (player.timer >= 1) {
+        showMessage("You cannot perform this action. Timer is not at zero.");
+        return false;
+    }
+    return true;
 }
 
+function calculateSuccess(config) {
+    if (!config.failureMessage) {
+        return true;
+    }
+    const modifier = config.successModifier || 0;
+    const successRate = Math.min(1, Math.max(0, player.actionSuccessRate + modifier));
+    return player.playerAction(successRate);
+}
 
+function applyOutcome(config, success) {
+    const xpGain = Math.round((config.xp || 0) * player.baseXPMultiplier);
+    if (success) {
+        player.currentXP += xpGain;
+        player.playerMoney += config.money || 0;
+        if (config.timerReset !== undefined) {
+            player.timer = config.timerReset;
+        }
+        showMessage(config.successMessage);
+    } else {
+        if (config.timerPenalty) {
+            player.timer += config.timerPenalty;
+        }
+        showMessage(config.failureMessage);
+    }
 
+    if (config.apRestore) {
+        player.actionPoints = config.apRestore;
+    } else {
+        player.actionPoints -= config.apCost || 0;
+    }
+}
 
+function finalizeAction(actionKey, success) {
+    const config = ACTION_CONFIG[actionKey];
+    if (config && config.buttonId) {
+        graphics.updateButtonColor(config.buttonId, success);
+        setTimeout(() => {
+            document.getElementById(config.buttonId).classList.remove('success', 'fail');
+        }, 2000);
+    }
+    player.checkLevelUp();
+    graphics.updateStatsColors(player);
+    player.saveDataToLocalStorage();
+}
+
+function handleAction(actionKey) {
+    const config = ACTION_CONFIG[actionKey];
+    if (!canPerformAction(actionKey, config)) return;
+
+    const success = calculateSuccess(config);
+    applyOutcome(config, success);
+    finalizeAction(actionKey, success);
+}
 
 // Countdown function
 setInterval(() => {
@@ -618,9 +521,10 @@ setInterval(() => {
     if (player.timer === 0) {
         if (player.idleEnabled) {
             if (player.actionPoints > 0) {
-                // Perform a random action excluding "sleep"
-                const actions = ['cleanRoom', 'washDishes', 'cookMeal', 'studyExam', 'practiceCoding', 'takeWalk', 'meditate', 'exercise', 'playGame'];
-                const randomAction = actions[Math.floor(Math.random() * actions.length)];
+                const idleActions = Object.entries(ACTION_CONFIG)
+                    .filter(([, config]) => config.idleEligible)
+                    .map(([key]) => key);
+                const randomAction = idleActions[Math.floor(Math.random() * idleActions.length)];
                 handleAction(randomAction);
             } else {
                 // Sleep if the player runs out of action points
