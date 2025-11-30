@@ -235,6 +235,7 @@ const DOM = {
     message: document.getElementById('message'),
     toast: document.getElementById('action-toast'),
     asyncStatus: document.getElementById('async-status'),
+    lootTicker: document.getElementById('loot-ticker'),
     inventoryList: document.getElementById('inventory-list'),
     actionsContent: document.getElementById('actions-content'),
     shop: {
@@ -329,6 +330,49 @@ function showToast(message, tone = 'info') {
     setTimeout(() => {
         DOM.toast.classList.remove('show');
     }, 1700);
+}
+
+function setActionCardState(actionKey, success) {
+    const elements = actionCardElements[actionKey];
+    if (!elements?.card) return;
+    const stateClass = success ? 'action-card--success' : 'action-card--fail';
+    elements.card.classList.remove('action-card--success', 'action-card--fail');
+    elements.card.classList.add(stateClass);
+    setTimeout(() => {
+        elements.card?.classList.remove(stateClass);
+    }, 1700);
+}
+
+function pushLootTickerEntries({ xp = 0, gold = 0, items = [] } = {}, tone = 'info') {
+    if (!DOM.lootTicker) return;
+    const entries = [];
+    if (xp) entries.push({ icon: 'fa-star', text: `+${xp} XP` });
+    if (gold) entries.push({ icon: 'fa-coins', text: `+${gold} Gold` });
+    items.forEach(item => entries.push({ icon: 'fa-gift', text: item }));
+
+    entries.forEach(entry => {
+        const item = document.createElement('div');
+        item.classList.add('loot-ticker__item');
+        item.dataset.tone = tone;
+
+        const icon = document.createElement('i');
+        icon.className = `loot-ticker__icon fas ${entry.icon}`;
+        const value = document.createElement('span');
+        value.classList.add('loot-ticker__value');
+        value.textContent = entry.text;
+
+        item.appendChild(icon);
+        item.appendChild(value);
+        DOM.lootTicker.prepend(item);
+
+        setTimeout(() => {
+            item.remove();
+        }, 3200);
+
+        while (DOM.lootTicker.children.length > 4) {
+            DOM.lootTicker.removeChild(DOM.lootTicker.lastChild);
+        }
+    });
 }
 
 function showMessage(message, tone = 'info') {
@@ -697,6 +741,7 @@ function createActionCard(key, config) {
     DOM.actionsContent.appendChild(card);
 
     actionCardElements[key] = {
+        card,
         progressBar,
         progressLabel,
         timerInfo,
@@ -833,7 +878,7 @@ function pullActiveBuff() {
     return buff;
 }
 
-function applyOutcome(config, success) {
+function applyOutcome(actionKey, config, success) {
     const { timerReset, timerPenalty } = getActionTimers(config);
     const xpGain = Math.round((config.xp || 0) * player.baseXPMultiplier);
     const pityXP = Math.max(0, Math.floor(xpGain * FAILURE_PITY_FACTOR));
@@ -842,15 +887,19 @@ function applyOutcome(config, success) {
     const consumedBuff = pullActiveBuff();
     const timerReduction = consumedBuff?.timerReduction || 0;
     const buffNote = consumedBuff?.description;
+    const rewards = { xp: 0, gold: 0 };
     if (success) {
         player.currentXP += xpGain;
         player.playerMoney += config.money || 0;
+        rewards.xp += xpGain;
+        rewards.gold += config.money || 0;
         if (config.timerReset !== undefined) {
             const adjustedTimer = Math.max(0, timerReset - timerReduction);
             player.timer = adjustedTimer;
         }
         showMessage(config.successMessage, tone);
         showToast(config.successMessage, tone);
+        setActionCardState(actionKey, true);
     } else {
         if (timerPenalty) {
             const penalizedTimer = player.timer + timerPenalty;
@@ -863,9 +912,11 @@ function applyOutcome(config, success) {
         }
         if (pityXP) {
             player.currentXP += pityXP;
+            rewards.xp += pityXP;
         }
         if (pityGold) {
             player.playerMoney += pityGold;
+            rewards.gold += pityGold;
         }
 
         const pityParts = [];
@@ -875,6 +926,11 @@ function applyOutcome(config, success) {
         const failureMessage = `${config.failureMessage}${pityText}`;
         showMessage(failureMessage, tone);
         showToast(failureMessage, tone);
+        setActionCardState(actionKey, false);
+    }
+
+    if (rewards.xp || rewards.gold) {
+        pushLootTickerEntries(rewards, tone);
     }
 
     if (config.apRestore) {
@@ -907,7 +963,7 @@ function handleAction(actionKey) {
     if (!canPerformAction(actionKey, config)) return;
 
     const success = calculateSuccess(config);
-    const { buffNote } = applyOutcome(config, success);
+    const { buffNote } = applyOutcome(actionKey, config, success);
     finalizeAction(actionKey, success, buffNote);
 }
 
