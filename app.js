@@ -7,7 +7,7 @@ const BASE_XP_TO_NEXT_LEVEL = 75;
 const LEVEL_XP_GROWTH = 1.6;
 const XP_GAIN_GROWTH = 1.1;
 const ACTION_POINT_PER_LEVEL = 3;
-const BASE_ACTION_TIMER = 10;
+const BASE_ACTION_TIMER = 6;
 const REST_TIMER = 20;
 
 // Core action configuration for easy tuning
@@ -16,7 +16,7 @@ const ACTION_CONFIG = {
         xp: 8,
         money: 10,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 11,
+        timerPenalty: 3,
         apCost: 1,
         successModifier: 0,
         successMessage: "Cleaned the room successfully!",
@@ -28,7 +28,7 @@ const ACTION_CONFIG = {
         xp: 6,
         money: 7,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 13,
+        timerPenalty: 3,
         apCost: 1,
         successModifier: 0,
         successMessage: "Washed the dishes successfully!",
@@ -40,7 +40,7 @@ const ACTION_CONFIG = {
         xp: 12,
         money: 15,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 15,
+        timerPenalty: 4,
         apCost: 1,
         successModifier: -0.05,
         successMessage: "Cooked a meal successfully!",
@@ -52,7 +52,7 @@ const ACTION_CONFIG = {
         xp: 16,
         money: 20,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 17,
+        timerPenalty: 4,
         apCost: 1,
         successModifier: -0.1,
         successMessage: "Studied for the exam successfully!",
@@ -64,7 +64,7 @@ const ACTION_CONFIG = {
         xp: 30,
         money: 22,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 14,
+        timerPenalty: 4,
         apCost: 1,
         successModifier: -0.25,
         successMessage: "Practiced coding successfully!",
@@ -76,7 +76,7 @@ const ACTION_CONFIG = {
         xp: 20,
         money: 6,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 11,
+        timerPenalty: 2,
         apCost: 1,
         successModifier: -0.01,
         successMessage: "Took a walk successfully!",
@@ -88,7 +88,7 @@ const ACTION_CONFIG = {
         xp: 28,
         money: 0,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 13,
+        timerPenalty: 2,
         apCost: 1,
         successModifier: 0.25,
         successMessage: "Meditated successfully!",
@@ -100,7 +100,7 @@ const ACTION_CONFIG = {
         xp: 24,
         money: 0,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 16,
+        timerPenalty: 4,
         apCost: 1,
         successModifier: -0.25,
         successMessage: "Exercised successfully!",
@@ -112,7 +112,7 @@ const ACTION_CONFIG = {
         xp: 5,
         money: 25,
         timerReset: BASE_ACTION_TIMER,
-        timerPenalty: 20,
+        timerPenalty: 4,
         apCost: 1,
         successModifier: 0.4,
         successMessage: "Played a game successfully!",
@@ -133,6 +133,35 @@ const ACTION_CONFIG = {
 };
 
 const STORAGE_KEY = 'idle-hakiko-save';
+
+function getLevelTier(level) {
+    if (level < 15) {
+        return 0;
+    }
+    if (level < 30) {
+        return 1;
+    }
+    if (level < 50) {
+        return 2;
+    }
+    return 3;
+}
+
+function scaleTiming(value, tier) {
+    if (!value) return 0;
+    const multiplier = 1 + tier * 0.2;
+    return Math.round(value * multiplier);
+}
+
+function getActionTimers(config) {
+    const tier = getLevelTier(player?.level || 1);
+    const baseReset = config.timerReset ?? BASE_ACTION_TIMER;
+    const basePenalty = config.timerPenalty ?? 0;
+    return {
+        timerReset: scaleTiming(baseReset, tier),
+        timerPenalty: scaleTiming(basePenalty, tier)
+    };
+}
 
 const DOM = {
     stats: {
@@ -590,19 +619,20 @@ function calculateSuccess(config) {
 }
 
 function applyOutcome(config, success) {
+    const { timerReset, timerPenalty } = getActionTimers(config);
     const xpGain = Math.round((config.xp || 0) * player.baseXPMultiplier);
     const tone = success ? 'success' : 'error';
     if (success) {
         player.currentXP += xpGain;
         player.playerMoney += config.money || 0;
         if (config.timerReset !== undefined) {
-            player.timer = config.timerReset;
+            player.timer = timerReset;
         }
         showMessage(config.successMessage, tone);
         showToast(config.successMessage, tone);
     } else {
-        if (config.timerPenalty) {
-            player.timer += config.timerPenalty;
+        if (timerPenalty) {
+            player.timer += timerPenalty;
         }
         showMessage(config.failureMessage, tone);
         showToast(config.failureMessage, tone);
