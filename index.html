@@ -55,6 +55,69 @@
         button:hover {
             background-color: #ffd700;
         }
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .action-card {
+            border: 1px solid #b5b5b5;
+            border-radius: 8px;
+            background: #fdfdfd;
+            padding: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .action-card__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            color: #1f2a44;
+        }
+        .action-card__meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 0.9rem;
+            color: #313131;
+        }
+        .pill {
+            background: #eef2ff;
+            color: #1f2a44;
+            border-radius: 999px;
+            padding: 4px 8px;
+            border: 1px solid #cdd4ff;
+            font-size: 0.85rem;
+        }
+        .action-card__rewards {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .action-progress {
+            background: #ececec;
+            border-radius: 6px;
+            border: 1px solid #c7c7c7;
+            overflow: hidden;
+            height: 12px;
+        }
+        .action-progress__bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7bb1ff, #5c8bff);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .action-progress__label {
+            font-size: 0.85rem;
+            color: #4d4d4d;
+        }
+        .action-card button {
+            align-self: flex-start;
+        }
         .status-stack {
             display: flex;
             flex-direction: column;
@@ -219,22 +282,11 @@
                     </div>
                 </div>
                 <p>You're in your room. There's so much room for activities!</p>
-                <div id="actions-content">
-                <button id="clean-room"><i class="fas fa-broom"></i> Clean Room</button>
-                <button id="wash-dishes"><i class="fas fa-utensils"></i> Wash Dishes</button>
-                <button id="cook-meal"><i class="fas fa-utensil-spoon"></i> Cook Meal</button>
-                <button id="study-exam"><i class="fas fa-book-open"></i> Study Exam</button>
-                <button id="practice-coding"><i class="fas fa-laptop-code"></i> Practice Coding</button>
-                <button id="take-walk"><i class="fas fa-walking"></i> Take a Walk</button>
-                <button id="meditate"><i class="fas fa-praying-hands"></i> Meditate</button>
-                <button id="exercise"><i class="fas fa-dumbbell"></i> Exercise</button>
-                <button id="play-game"><i class="fas fa-gamepad"></i> Play Game</button>
-                <button id="sleep"><i class="fas fa-bed"></i> Sleep</button>
+                <div id="actions-content" class="action-grid" aria-live="polite"></div>
                 <button id="toggle-idle">Toggle Idle Mode</button>
-            </div>
 
-            
-            
+
+
             <br>
 
         </div>

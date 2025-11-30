@@ -144,6 +144,32 @@ const ACTION_CONFIG = {
     }
 };
 
+const ACTION_LABELS = {
+    cleanRoom: 'Clean Room',
+    washDishes: 'Wash Dishes',
+    cookMeal: 'Cook Meal',
+    studyExam: 'Study Exam',
+    practiceCoding: 'Practice Coding',
+    takeWalk: 'Take a Walk',
+    meditate: 'Meditate',
+    exercise: 'Exercise',
+    playGame: 'Play Game',
+    sleep: 'Sleep'
+};
+
+const ACTION_ICONS = {
+    cleanRoom: 'fa-broom',
+    washDishes: 'fa-utensils',
+    cookMeal: 'fa-utensil-spoon',
+    studyExam: 'fa-book-open',
+    practiceCoding: 'fa-laptop-code',
+    takeWalk: 'fa-walking',
+    meditate: 'fa-praying-hands',
+    exercise: 'fa-dumbbell',
+    playGame: 'fa-gamepad',
+    sleep: 'fa-bed'
+};
+
 const STORAGE_KEY = 'idle-hakiko-save';
 
 function getLevelTier(level) {
@@ -210,6 +236,7 @@ const DOM = {
     toast: document.getElementById('action-toast'),
     asyncStatus: document.getElementById('async-status'),
     inventoryList: document.getElementById('inventory-list'),
+    actionsContent: document.getElementById('actions-content'),
     shop: {
         walletGold: document.getElementById('shop-gold'),
         walletEssence: document.getElementById('shop-essence'),
@@ -598,6 +625,109 @@ class graphics {
 
 player = new player(); // Instantiate the player object
 graphics = new graphics();
+const actionCardElements = {};
+
+function successChancePercent(config) {
+    if (!config.failureMessage) {
+        return 100;
+    }
+    const modifier = config.successModifier || 0;
+    const rate = Math.min(1, Math.max(0, player.actionSuccessRate + modifier));
+    return Math.round(rate * 100);
+}
+
+function createActionCard(key, config) {
+    if (!DOM.actionsContent) return;
+
+    const card = document.createElement('div');
+    card.classList.add('action-card');
+
+    const header = document.createElement('div');
+    header.classList.add('action-card__header');
+    const title = document.createElement('span');
+    title.innerHTML = `<i class="fas ${ACTION_ICONS[key] || ''}"></i> ${ACTION_LABELS[key] || key}`;
+    header.appendChild(title);
+
+    const rewards = document.createElement('div');
+    rewards.classList.add('action-card__rewards');
+    const xpReward = document.createElement('span');
+    xpReward.classList.add('pill');
+    xpReward.textContent = `${config.xp || 0} XP`;
+    const goldReward = document.createElement('span');
+    goldReward.classList.add('pill');
+    goldReward.textContent = `${config.money || 0} Gold`;
+    rewards.appendChild(xpReward);
+    rewards.appendChild(goldReward);
+
+    const meta = document.createElement('div');
+    meta.classList.add('action-card__meta');
+    const apCost = document.createElement('span');
+    apCost.classList.add('pill');
+    apCost.textContent = `AP Cost: ${config.apCost ?? 0}`;
+    const timerInfo = document.createElement('span');
+    timerInfo.classList.add('pill');
+    timerInfo.dataset.meta = 'timer';
+    const successInfo = document.createElement('span');
+    successInfo.classList.add('pill');
+    successInfo.dataset.meta = 'success';
+    meta.appendChild(apCost);
+    meta.appendChild(timerInfo);
+    meta.appendChild(successInfo);
+
+    const progressLabel = document.createElement('div');
+    progressLabel.classList.add('action-progress__label');
+    const progress = document.createElement('div');
+    progress.classList.add('action-progress');
+    const progressBar = document.createElement('div');
+    progressBar.classList.add('action-progress__bar');
+    progress.appendChild(progressBar);
+
+    const button = document.createElement('button');
+    button.id = config.buttonId;
+    button.innerHTML = `<i class="fas ${ACTION_ICONS[key] || ''}"></i> ${ACTION_LABELS[key] || key}`;
+    button.addEventListener('click', () => handleAction(key));
+
+    card.appendChild(header);
+    card.appendChild(rewards);
+    card.appendChild(meta);
+    card.appendChild(progressLabel);
+    card.appendChild(progress);
+    card.appendChild(button);
+
+    DOM.actionsContent.appendChild(card);
+
+    actionCardElements[key] = {
+        progressBar,
+        progressLabel,
+        timerInfo,
+        successInfo
+    };
+}
+
+function renderActionCards() {
+    if (!DOM.actionsContent) return;
+    DOM.actionsContent.innerHTML = '';
+    Object.entries(ACTION_CONFIG).forEach(([key, config]) => {
+        createActionCard(key, config);
+    });
+    updateActionCards();
+}
+
+function updateActionCards() {
+    Object.entries(actionCardElements).forEach(([key, elements]) => {
+        const config = ACTION_CONFIG[key];
+        if (!config) return;
+        const { timerReset } = getActionTimers(config);
+        const resetTime = timerReset || 1;
+        const remaining = player.timer;
+        const progressPercent = Math.min(100, Math.max(0, ((resetTime - remaining) / resetTime) * 100));
+
+        elements.progressBar.style.width = `${progressPercent}%`;
+        elements.progressLabel.textContent = remaining > 0 ? `${remaining}s until ready` : 'Ready to perform';
+        elements.timerInfo.textContent = `Timer: ${timerReset ?? 0}s`;
+        elements.successInfo.textContent = `Success: ${successChancePercent(config)}%`;
+    });
+}
 
 function handleItemUse(itemName) {
     const result = useInventoryItem(player, itemName);
@@ -659,6 +789,7 @@ function refreshUI(message, tone = 'info') {
     graphics.updateStatsColors(player);
     graphics.updateInventory(player);
     renderShopWallet();
+    updateActionCards();
     if (message) {
         showMessage(message, tone);
     }
@@ -833,6 +964,7 @@ const item = new Item('Health Potion', 'Restores health', {
 player.displayInventory();
 renderShopItems();
 renderShopWallet();
+renderActionCards();
 refreshUI('Welcome back!', 'info');
 setAsyncStatus('Ready', 'idle');
 
@@ -948,37 +1080,6 @@ DOM.battle.startButton.addEventListener('click', async () => {
 
 previewNextEnemy();
 
-
-document.getElementById('clean-room').addEventListener('click', function() {
-    handleAction('cleanRoom');
-});
-document.getElementById('wash-dishes').addEventListener('click', function() {
-    handleAction('washDishes');
-});
-document.getElementById('cook-meal').addEventListener('click', function() {
-    handleAction('cookMeal');
-});
-document.getElementById('study-exam').addEventListener('click', function() {
-    handleAction('studyExam');
-});
-document.getElementById('practice-coding').addEventListener('click', function() {
-    handleAction('practiceCoding');
-});
-document.getElementById('take-walk').addEventListener('click', function() {
-    handleAction('takeWalk');
-});
-document.getElementById('meditate').addEventListener('click', function() {
-    handleAction('meditate');
-});
-document.getElementById('exercise').addEventListener('click', function() {
-    handleAction('exercise');
-});
-document.getElementById('play-game').addEventListener('click', function() {
-    handleAction('playGame');
-});
-document.getElementById('sleep').addEventListener('click', function() {
-    handleAction('sleep');
-});
 
 document.getElementById('toggle-idle').addEventListener('click', () => {
     player.toggleIdle();
