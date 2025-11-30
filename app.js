@@ -1,4 +1,4 @@
-import { Enemy, generateRandomEnemy, handleBattle } from '/battlesystem.js';
+import { startBattle, getEnemyPreview } from '/battlesystem.js';
 
 
 
@@ -107,15 +107,9 @@ export class player {
         showMessage(`Idle function ${this.idleEnabled ? 'enabled' : 'disabled'}.`);
     }
     takeDamage(damage) {
-        // Deduct health considering enemy's defense
         const actualDamage = Math.max(damage - this.defense, 0);
         this.health -= actualDamage;
-        // Check if the enemy is defeated
-        if (this.health <= 0) {
-            console.log(`${this.name} has been defeated!`);
-            return true;
-        }
-        return false;
+        return { defeated: this.health <= 0, actualDamage };
     }
 
     updatePlayerStats() {
@@ -650,11 +644,79 @@ player.updatePlayerStats();
 graphics.updateStatsColors(player);
 graphics.updateInventory(player);
 
-// Battlebutt
-document.getElementById('start-battle').addEventListener('click', () => {
-    const enemy = generateRandomEnemy();
-    handleBattle(player, enemy);
+function renderStatusEffects(effects) {
+    if (!effects || effects.length === 0) {
+        return 'None';
+    }
+    return effects.map(effect => `${effect.label || effect.type} (${effect.duration} turns)`).join(', ');
+}
+
+function updateBattlePanel(battleState) {
+    if (!battleState) return;
+    const { enemy, wave, player: battlePlayer } = battleState;
+
+    document.getElementById('battle-enemy-name').textContent = enemy.name;
+    document.getElementById('battle-wave').textContent = `${wave.tier} (Difficulty ${wave.difficulty})`;
+    document.getElementById('battle-enemy-health').textContent = `${Math.max(0, enemy.health).toFixed(1)} / ${enemy.maxHealth}`;
+    document.getElementById('battle-enemy-attack').textContent = enemy.attack;
+    document.getElementById('battle-enemy-defense').textContent = enemy.defense;
+    document.getElementById('battle-enemy-status').textContent = renderStatusEffects(enemy.statusEffects);
+    document.getElementById('battle-player-status').textContent = renderStatusEffects(battlePlayer.statusEffects);
+
+    const lastLog = battleState.log[battleState.log.length - 1];
+    if (lastLog) {
+        const logElement = document.getElementById('battle-log');
+        const line = document.createElement('div');
+        line.textContent = lastLog;
+        logElement.appendChild(line);
+        logElement.scrollTop = logElement.scrollHeight;
+    }
+}
+
+function previewNextEnemy() {
+    const preview = getEnemyPreview(player);
+    document.getElementById('battle-enemy-name').textContent = preview.enemy.name;
+    document.getElementById('battle-wave').textContent = `${preview.wave.tier} (Difficulty ${preview.wave.difficulty})`;
+    document.getElementById('battle-enemy-health').textContent = `${preview.enemy.health} / ${preview.enemy.maxHealth}`;
+    document.getElementById('battle-enemy-attack').textContent = preview.enemy.attack;
+    document.getElementById('battle-enemy-defense').textContent = preview.enemy.defense;
+    document.getElementById('battle-enemy-status').textContent = 'None';
+    document.getElementById('battle-player-status').textContent = renderStatusEffects(player.statusEffects);
+    document.getElementById('battle-log').textContent = 'Waiting for battle start...';
+}
+
+function handleBattleEnd(battleState, playerWon) {
+    if (playerWon && battleState.rewards) {
+        document.getElementById('battle-reward-gold').textContent = battleState.rewards.gold;
+        document.getElementById('battle-reward-xp').textContent = battleState.rewards.experience;
+        document.getElementById('battle-reward-loot').textContent = battleState.rewards.loot || 'None';
+        document.getElementById('battle-reward-tier').textContent = battleState.rewards.tier;
+        graphics.updateInventory(player);
+    } else {
+        document.getElementById('battle-reward-gold').textContent = 0;
+        document.getElementById('battle-reward-xp').textContent = 0;
+        document.getElementById('battle-reward-loot').textContent = 'None';
+        document.getElementById('battle-reward-tier').textContent = 'None';
+    }
+    player.updatePlayerStats();
+    graphics.updateStatsColors(player);
+    graphics.showMessage(playerWon ? 'You won the battle!' : 'You were defeated.');
+    previewNextEnemy();
+}
+
+document.getElementById('start-battle').addEventListener('click', async () => {
+    document.getElementById('start-battle').disabled = true;
+    document.getElementById('battle-log').textContent = '';
+    const battleState = await startBattle(player, {
+        onBattleStart: updateBattlePanel,
+        onUpdate: updateBattlePanel,
+        onBattleEnd: handleBattleEnd
+    });
+    document.getElementById('start-battle').disabled = false;
+    return battleState;
 });
+
+previewNextEnemy();
 
 
 document.getElementById('clean-room').addEventListener('click', function() {
