@@ -1,5 +1,5 @@
 import { startBattle, getEnemyPreview } from '/battlesystem.js';
-import { addItemsToInventory, normalizeItems, removeItemsFromInventory } from '/inventorySystem.js';
+import { addItemsToInventory, isItemUsable, normalizeItems, removeItemsFromInventory, useInventoryItem } from '/inventorySystem.js';
 import { SHOP_CATALOG, purchaseItem } from '/shopSystem.js';
 
 // Progression & pacing constants
@@ -310,6 +310,7 @@ export class player {
         this.shadowEssence = 0;
         this.actionSuccessRate = 0.5;
         this.inventory = [];
+        this.activeActionBuff = null;
 
         this.damage = 3; // Default damage
         this.defense = 1; // Default defense
@@ -341,6 +342,7 @@ export class player {
             this.staminaRegenRate = savedData.staminaRegenRate ?? this.staminaRegenRate;
             this.mana = savedData.mana ?? this.mana;
             this.health = savedData.health ?? this.health;
+            this.activeActionBuff = null;
         } catch (error) {
             console.warn('Could not parse save data; resetting to defaults.', error);
             this.resetToDefaults();
@@ -521,10 +523,30 @@ class graphics {
         const header = document.createElement('div');
         header.textContent = 'Your inventory items:';
         inventoryElement.appendChild(header);
+
+        if (player.activeActionBuff) {
+            const buffBanner = document.createElement('div');
+            buffBanner.textContent = `Active buff: ${player.activeActionBuff.description || 'Timer reduction ready for the next action.'}`;
+            buffBanner.classList.add('message', 'info');
+            inventoryElement.appendChild(buffBanner);
+        }
+
         player.inventory.forEach(item => {
             const itemElement = document.createElement('div');
+            itemElement.classList.add('inventory-row');
             const qty = item.quantity ?? 1;
-            itemElement.textContent = qty > 1 ? `${item.name} x${qty}` : item.name;
+
+            const label = document.createElement('span');
+            label.textContent = qty > 1 ? `${item.name} x${qty}` : item.name;
+            itemElement.appendChild(label);
+
+            if (isItemUsable(item.name)) {
+                const useButton = document.createElement('button');
+                useButton.textContent = 'Use';
+                useButton.addEventListener('click', () => handleItemUse(item.name));
+                itemElement.appendChild(useButton);
+            }
+
             inventoryElement.appendChild(itemElement);
         });
     }
@@ -532,6 +554,15 @@ class graphics {
 
 player = new player(); // Instantiate the player object
 graphics = new graphics();
+
+function handleItemUse(itemName) {
+    const result = useInventoryItem(player, itemName);
+    const tone = result.tone || (result.success ? 'success' : 'error');
+    showMessage(result.message, tone);
+    showToast(result.message, result.success ? 'success' : 'error');
+    refreshUI();
+    player.saveDataToLocalStorage();
+}
 
 function renderShopWallet() {
     if (!DOM.shop.walletGold || !DOM.shop.walletEssence) return;
@@ -618,21 +649,34 @@ function calculateSuccess(config) {
     return player.playerAction(successRate);
 }
 
+function pullActiveBuff() {
+    const buff = player.activeActionBuff;
+    player.activeActionBuff = null;
+    return buff;
+}
+
 function applyOutcome(config, success) {
     const { timerReset, timerPenalty } = getActionTimers(config);
     const xpGain = Math.round((config.xp || 0) * player.baseXPMultiplier);
     const tone = success ? 'success' : 'error';
+    const consumedBuff = pullActiveBuff();
+    const timerReduction = consumedBuff?.timerReduction || 0;
+    const buffNote = consumedBuff?.description;
     if (success) {
         player.currentXP += xpGain;
         player.playerMoney += config.money || 0;
         if (config.timerReset !== undefined) {
-            player.timer = timerReset;
+            const adjustedTimer = Math.max(0, timerReset - timerReduction);
+            player.timer = adjustedTimer;
         }
         showMessage(config.successMessage, tone);
         showToast(config.successMessage, tone);
     } else {
         if (timerPenalty) {
-            player.timer += timerPenalty;
+            const penalizedTimer = player.timer + timerPenalty;
+            player.timer = Math.max(0, penalizedTimer - timerReduction);
+        } else if (timerReduction) {
+            player.timer = Math.max(0, player.timer - timerReduction);
         }
         showMessage(config.failureMessage, tone);
         showToast(config.failureMessage, tone);
@@ -643,9 +687,11 @@ function applyOutcome(config, success) {
     } else {
         player.actionPoints -= config.apCost || 0;
     }
+
+    return { buffNote };
 }
 
-function finalizeAction(actionKey, success) {
+function finalizeAction(actionKey, success, buffNote) {
     const config = ACTION_CONFIG[actionKey];
     if (config && config.buttonId) {
         graphics.updateButtonColor(config.buttonId, success);
@@ -655,6 +701,9 @@ function finalizeAction(actionKey, success) {
     }
     player.checkLevelUp();
     refreshUI();
+    if (buffNote) {
+        showToast(buffNote, 'info');
+    }
     player.saveDataToLocalStorage();
 }
 
@@ -663,8 +712,8 @@ function handleAction(actionKey) {
     if (!canPerformAction(actionKey, config)) return;
 
     const success = calculateSuccess(config);
-    applyOutcome(config, success);
-    finalizeAction(actionKey, success);
+    const { buffNote } = applyOutcome(config, success);
+    finalizeAction(actionKey, success, buffNote);
 }
 
 // Countdown function
