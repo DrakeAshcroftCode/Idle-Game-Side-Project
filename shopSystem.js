@@ -21,6 +21,13 @@ export const SHOP_CATALOG = [
         description: 'Trade essence for condensed energy.',
         cost: { gold: 25, essence: 3 },
         reward: { items: [{ name: 'Stamina Tonic', quantity: 1 }] }
+    },
+    {
+        id: 'snack',
+        name: 'Snack',
+        description: 'Cheap bite that restores a little AP and quickens your next task.',
+        cost: { gold: 12, essence: 0 },
+        reward: { items: [{ name: 'Snack', quantity: 1 }] }
     }
 ];
 

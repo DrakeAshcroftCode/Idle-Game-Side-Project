@@ -48,3 +48,48 @@ export function hasRequiredItems(inventory, requirements = []) {
         return existing && (existing.quantity ?? 1) >= req.quantity;
     });
 }
+
+export const ITEM_EFFECTS = {
+    Snack: {
+        type: 'consumable',
+        applyEffect: (player) => {
+            const apRestored = 3;
+            const timerReduction = 3;
+            player.actionPoints += apRestored;
+            player.activeActionBuff = {
+                type: 'quick-snack',
+                timerReduction,
+                description: `Next action timer reduced by ${timerReduction}s.`
+            };
+            return {
+                message: `Snack consumed! +${apRestored} AP and ${timerReduction}s off the next action timer.`,
+                tone: 'success'
+            };
+        }
+    }
+};
+
+export function isItemUsable(itemName) {
+    return Boolean(ITEM_EFFECTS[itemName]);
+}
+
+export function useInventoryItem(player, itemName) {
+    const effect = ITEM_EFFECTS[itemName];
+    if (!effect) {
+        return { success: false, message: 'This item cannot be used right now.', tone: 'error' };
+    }
+
+    const existing = player.inventory.find(i => i.name === itemName);
+    if (!existing || (existing.quantity ?? 0) <= 0) {
+        return { success: false, message: 'Item not found in your inventory.', tone: 'error' };
+    }
+
+    const result = effect.applyEffect(player) || {};
+    removeItemsFromInventory(player.inventory, [{ name: itemName, quantity: 1 }]);
+
+    return {
+        success: true,
+        message: result.message || 'Item used.',
+        tone: result.tone || 'info'
+    };
+}
