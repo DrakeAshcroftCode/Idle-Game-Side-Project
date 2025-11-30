@@ -130,6 +130,43 @@ const ACTION_CONFIG = {
     }
 };
 
+const STORAGE_KEY = 'idle-hakiko-save';
+
+const DOM = {
+    stats: {
+        level: document.getElementById('current-level'),
+        xpToNextLevel: document.getElementById('xp-to-next-level'),
+        actionPoints: document.getElementById('action-points'),
+        countdown: document.getElementById('countdown-timer'),
+        currentXP: document.getElementById('current-xp'),
+        money: document.getElementById('player-money'),
+        damage: document.getElementById('player-damage'),
+        defense: document.getElementById('player-defense'),
+        stamina: document.getElementById('player-stamina'),
+        mana: document.getElementById('player-mana'),
+        health: document.getElementById('player-health'),
+    },
+    message: document.getElementById('message'),
+    toast: document.getElementById('action-toast'),
+    asyncStatus: document.getElementById('async-status'),
+    inventoryList: document.getElementById('inventory-list'),
+    battle: {
+        enemyName: document.getElementById('battle-enemy-name'),
+        wave: document.getElementById('battle-wave'),
+        enemyHealth: document.getElementById('battle-enemy-health'),
+        enemyAttack: document.getElementById('battle-enemy-attack'),
+        enemyDefense: document.getElementById('battle-enemy-defense'),
+        enemyStatus: document.getElementById('battle-enemy-status'),
+        playerStatus: document.getElementById('battle-player-status'),
+        log: document.getElementById('battle-log'),
+        rewardGold: document.getElementById('battle-reward-gold'),
+        rewardXP: document.getElementById('battle-reward-xp'),
+        rewardLoot: document.getElementById('battle-reward-loot'),
+        rewardTier: document.getElementById('battle-reward-tier'),
+        startButton: document.getElementById('start-battle'),
+    }
+};
+
 
 
 // Function to handle tab navigation
@@ -191,38 +228,48 @@ function levelName(level) {
     }
 }
 
+function showToast(message, tone = 'info') {
+    if (!DOM.toast) return;
+    DOM.toast.textContent = message;
+    DOM.toast.className = `toast ${tone} show`;
+    setTimeout(() => {
+        DOM.toast.classList.remove('show');
+    }, 1700);
+}
+
+function showMessage(message, tone = 'info') {
+    if (!DOM.message) return;
+    DOM.message.textContent = message;
+    DOM.message.classList.remove('info', 'success', 'error');
+    DOM.message.classList.add(tone);
+}
+
+function setAsyncStatus(text, state = 'idle') {
+    if (!DOM.asyncStatus) return;
+    DOM.asyncStatus.textContent = text;
+    DOM.asyncStatus.dataset.state = state;
+}
+
 export class player {
-    
+
     constructor(graphics) {
-        
-        // Initialize player properties with default values or retrieve them from local storage if available
-        const savedData = JSON.parse(localStorage.getItem('savedData'));
-        if (savedData) {
-            this.level = savedData.level;
-            this.maxLevel = savedData.maxLevel;
-            this.xpToNextLevel = savedData.xpToNextLevel;
-            this.baseXPMultiplier = savedData.baseXPMultiplier;
-            this.actionPoints = savedData.actionPoints;
-            this.timer = savedData.timer;
-            this.currentXP = savedData.currentXP;
-            this.playerMoney = savedData.playerMoney;
-            this.actionSuccessRate = savedData.actionSuccessRate;
-            this.inventory = savedData.inventory ? savedData.inventory : [];
-        } else {
-            this.level = 1;
-            this.maxLevel = 100;
-            this.xpToNextLevel = BASE_XP_TO_NEXT_LEVEL;
-            this.baseXPMultiplier = 1;
-            this.actionPoints = 10;
-            this.timer = BASE_ACTION_TIMER;
-            this.currentXP = 0;
-            this.playerMoney = 0;
-            this.actionSuccessRate = 0.5;
-            this.inventory = [];
-        }
-        
-        // Initialize additional player properties
+
+        this.resetToDefaults();
+        this.loadDataFromLocalStorage();
         this.idleEnabled = false; // Default to idle function disabled
+    }
+
+    resetToDefaults() {
+        this.level = 1;
+        this.maxLevel = 100;
+        this.xpToNextLevel = BASE_XP_TO_NEXT_LEVEL;
+        this.baseXPMultiplier = 1;
+        this.actionPoints = 10;
+        this.timer = BASE_ACTION_TIMER;
+        this.currentXP = 0;
+        this.playerMoney = 0;
+        this.actionSuccessRate = 0.5;
+        this.inventory = [];
 
         this.damage = 3; // Default damage
         this.defense = 1; // Default defense
@@ -232,9 +279,38 @@ export class player {
         this.health = 10; // Default health
     }
 
+    loadDataFromLocalStorage() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try {
+            const savedData = JSON.parse(raw);
+            this.level = savedData.level ?? this.level;
+            this.maxLevel = savedData.maxLevel ?? this.maxLevel;
+            this.xpToNextLevel = savedData.xpToNextLevel ?? this.xpToNextLevel;
+            this.baseXPMultiplier = savedData.baseXPMultiplier ?? this.baseXPMultiplier;
+            this.actionPoints = savedData.actionPoints ?? this.actionPoints;
+            this.timer = savedData.timer ?? this.timer;
+            this.currentXP = savedData.currentXP ?? this.currentXP;
+            this.playerMoney = savedData.playerMoney ?? this.playerMoney;
+            this.actionSuccessRate = savedData.actionSuccessRate ?? this.actionSuccessRate;
+            this.inventory = savedData.inventory ? savedData.inventory : [];
+            this.damage = savedData.damage ?? this.damage;
+            this.defense = savedData.defense ?? this.defense;
+            this.stamina = savedData.stamina ?? this.stamina;
+            this.staminaRegenRate = savedData.staminaRegenRate ?? this.staminaRegenRate;
+            this.mana = savedData.mana ?? this.mana;
+            this.health = savedData.health ?? this.health;
+        } catch (error) {
+            console.warn('Could not parse save data; resetting to defaults.', error);
+            this.resetToDefaults();
+        }
+    }
+
     toggleIdle() {
         this.idleEnabled = !this.idleEnabled;
-        showMessage(`Idle function ${this.idleEnabled ? 'enabled' : 'disabled'}.`);
+        const statusText = `Idle function ${this.idleEnabled ? 'enabled' : 'disabled'}.`;
+        showMessage(statusText, 'info');
+        showToast(statusText, 'info');
     }
     takeDamage(damage) {
         const actualDamage = Math.max(damage - this.defense, 0);
@@ -243,19 +319,19 @@ export class player {
     }
 
     updatePlayerStats() {
-        let levelDisplayName = levelName(this.level);;
+        const levelDisplayName = levelName(this.level);
 
-        document.getElementById('current-level').textContent = `(${this.level}) ${levelDisplayName}`;
-        document.getElementById('xp-to-next-level').textContent = this.xpToNextLevel;
-        document.getElementById('action-points').textContent = this.actionPoints;
-        document.getElementById('countdown-timer').textContent = this.timer;
-        document.getElementById('current-xp').textContent = this.currentXP;
-        document.getElementById('player-money').textContent = this.playerMoney;
-        document.getElementById('player-damage').textContent = this.damage;
-        document.getElementById('player-defense').textContent = this.defense;
-        document.getElementById('player-stamina').textContent = this.stamina;
-        document.getElementById('player-mana').textContent = this.mana;
-        document.getElementById('player-health').textContent = this.health;
+        DOM.stats.level.textContent = `(${this.level}) ${levelDisplayName}`;
+        DOM.stats.xpToNextLevel.textContent = this.xpToNextLevel;
+        DOM.stats.actionPoints.textContent = this.actionPoints;
+        DOM.stats.countdown.textContent = this.timer;
+        DOM.stats.currentXP.textContent = this.currentXP;
+        DOM.stats.money.textContent = this.playerMoney;
+        DOM.stats.damage.textContent = this.damage;
+        DOM.stats.defense.textContent = this.defense;
+        DOM.stats.stamina.textContent = this.stamina;
+        DOM.stats.mana.textContent = this.mana;
+        DOM.stats.health.textContent = this.health;
     }
 
     saveDataToLocalStorage() {
@@ -277,28 +353,12 @@ export class player {
             health: this.health,
             staminaRegenRate: this.staminaRegenRate
         };
-        localStorage.setItem('savedData', JSON.stringify(dataToSave));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     }
 
     wipeLocalStorage() {
-        localStorage.removeItem('savedData');
-        // Reset player properties to default values
-        this.level = 1;
-        this.maxLevel = 100;
-        this.xpToNextLevel = BASE_XP_TO_NEXT_LEVEL;
-        this.baseXPMultiplier = 1;
-        this.actionPoints = 10;
-        this.timer = BASE_ACTION_TIMER;
-        this.currentXP = 0;
-        this.playerMoney = 0;
-        this.actionSuccessRate = 0.5;
-        this.inventory = [];
-        this.damage = 1; // Default damage
-        this.defense = 1; // Default defense
-        this.stamina = 10; // Default stamina
-        this.staminaRegenRate = 1;
-        this.mana = 10; // Default mana
-        this.health = 10; // Default health
+        localStorage.removeItem(STORAGE_KEY);
+        this.resetToDefaults();
         this.updatePlayerStats();
     }
 
@@ -320,11 +380,13 @@ export class player {
     }
 
     checkLevelUp() {
+        let leveled = false;
         while (this.currentXP >= this.xpToNextLevel && this.level < this.maxLevel) {
             this.currentXP -= this.xpToNextLevel;
             this.levelUp();
+            leveled = true;
         }
-        this.updatePlayerStats();
+        return leveled;
     }
 
     addToInventory(item) {
@@ -369,15 +431,6 @@ document.querySelectorAll('menu a').forEach(link => {
 // Call the function to show the content of the first tab on page load
 showFirstTabContent();
 
-// Add event listener for the beforeunload event
-window.addEventListener('beforeunload', function(event) {
-    // Call saveDataToLocalStorage() to save the player's data
-    player.saveDataToLocalStorage();
-});
-
-
-
-
 class Item {
     constructor(name, description, effects) {
         this.name = name;
@@ -394,7 +447,7 @@ class graphics {
     updateStatsColors(player) {
         // Calculate color for current level
         const levelColor = `rgb(0, ${Math.round(255 * (player.level / player.maxLevel))}, ${Math.round(255 * (player.level / player.maxLevel))})`;
-        document.getElementById('current-level').style.color = levelColor;
+        DOM.stats.level.style.color = levelColor;
 
         // Calculate color for countdown timer
         let timerColor;
@@ -405,11 +458,7 @@ class graphics {
         } else {
             timerColor = 'green';
         }
-        document.getElementById('countdown-timer').style.color = timerColor;
-    }
-
-    showMessage(message) {
-        document.getElementById('message').textContent = message;
+        DOM.stats.countdown.style.color = timerColor;
     }
 
     updateButtonColor(buttonId, success) {
@@ -420,8 +469,17 @@ class graphics {
         }, 1000); // Remove the color class after 1 second
     }
     updateInventory(player) {
-        const inventoryElement = document.getElementById('inventory');
-        inventoryElement.innerHTML = '' + 'Your inventory items:'; // Clear previous inventory display
+        const inventoryElement = DOM.inventoryList;
+        inventoryElement.innerHTML = '';
+        if (!player.inventory.length) {
+            const emptyState = document.createElement('div');
+            emptyState.textContent = 'No items yet.';
+            inventoryElement.appendChild(emptyState);
+            return;
+        }
+        const header = document.createElement('div');
+        header.textContent = 'Your inventory items:';
+        inventoryElement.appendChild(header);
         player.inventory.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.textContent = item.name;
@@ -433,24 +491,33 @@ class graphics {
 player = new player(); // Instantiate the player object
 graphics = new graphics();
 
-function showMessage(message) {
-    document.getElementById('message').textContent = message;
+function refreshUI(message, tone = 'info') {
+    player.updatePlayerStats();
+    graphics.updateStatsColors(player);
+    graphics.updateInventory(player);
+    if (message) {
+        showMessage(message, tone);
+    }
 }
+
+window.addEventListener('beforeunload', () => {
+    player.saveDataToLocalStorage();
+});
 
 // COMBAT SYSTEM
 
 function canPerformAction(actionKey, config) {
     if (!config) return false;
     if (config.apThreshold !== undefined && player.actionPoints > config.apThreshold) {
-        showMessage("You aren't tired! (Must have less than 3 AP.)");
+        showMessage("You aren't tired! (Must have less than 3 AP.)", 'error');
         return false;
     }
     if (player.actionPoints < (config.apCost || 0)) {
-        showMessage("You are out of Action Points!");
+        showMessage("You are out of Action Points!", 'error');
         return false;
     }
     if (player.timer >= 1) {
-        showMessage("You cannot perform this action. Timer is not at zero.");
+        showMessage("You cannot perform this action. Timer is not at zero.", 'error');
         return false;
     }
     return true;
@@ -467,18 +534,21 @@ function calculateSuccess(config) {
 
 function applyOutcome(config, success) {
     const xpGain = Math.round((config.xp || 0) * player.baseXPMultiplier);
+    const tone = success ? 'success' : 'error';
     if (success) {
         player.currentXP += xpGain;
         player.playerMoney += config.money || 0;
         if (config.timerReset !== undefined) {
             player.timer = config.timerReset;
         }
-        showMessage(config.successMessage);
+        showMessage(config.successMessage, tone);
+        showToast(config.successMessage, tone);
     } else {
         if (config.timerPenalty) {
             player.timer += config.timerPenalty;
         }
-        showMessage(config.failureMessage);
+        showMessage(config.failureMessage, tone);
+        showToast(config.failureMessage, tone);
     }
 
     if (config.apRestore) {
@@ -497,7 +567,7 @@ function finalizeAction(actionKey, success) {
         }, 2000);
     }
     player.checkLevelUp();
-    graphics.updateStatsColors(player);
+    refreshUI();
     player.saveDataToLocalStorage();
 }
 
@@ -514,9 +584,8 @@ function handleAction(actionKey) {
 setInterval(() => {
     if (player.timer > 0) {
         player.timer--;
-        graphics.updateStatsColors(player);
-        player.updatePlayerStats();
         player.checkLevelUp();
+        refreshUI();
     }
     if (player.timer === 0) {
         if (player.idleEnabled) {
@@ -531,10 +600,10 @@ setInterval(() => {
                 handleAction('sleep');
             }
         } else {
-            graphics.showMessage("Timer has reached zero. You can take an action now.");
+            showMessage("Timer has reached zero. You can take an action now.", 'info');
         }
     } else if (player.timer > 1 && player.timer < 8) {
-        graphics.showMessage("You need a breather before taking another action.");
+        showMessage("You need a breather before taking another action.", 'info');
     }
 
 }, 1000);
@@ -543,10 +612,8 @@ const item = new Item('Health Potion', 'Restores health', {
     health: 10
 });
 player.displayInventory();
-// Update UI
-player.updatePlayerStats();
-graphics.updateStatsColors(player);
-graphics.updateInventory(player);
+refreshUI('Welcome back!', 'info');
+setAsyncStatus('Ready', 'idle');
 
 function renderStatusEffects(effects) {
     if (!effects || effects.length === 0) {
@@ -559,65 +626,81 @@ function updateBattlePanel(battleState) {
     if (!battleState) return;
     const { enemy, wave, player: battlePlayer } = battleState;
 
-    document.getElementById('battle-enemy-name').textContent = enemy.name;
-    document.getElementById('battle-wave').textContent = `${wave.tier} (Difficulty ${wave.difficulty})`;
-    document.getElementById('battle-enemy-health').textContent = `${Math.max(0, enemy.health).toFixed(1)} / ${enemy.maxHealth}`;
-    document.getElementById('battle-enemy-attack').textContent = enemy.attack;
-    document.getElementById('battle-enemy-defense').textContent = enemy.defense;
-    document.getElementById('battle-enemy-status').textContent = renderStatusEffects(enemy.statusEffects);
-    document.getElementById('battle-player-status').textContent = renderStatusEffects(battlePlayer.statusEffects);
+    DOM.battle.enemyName.textContent = enemy.name;
+    DOM.battle.wave.textContent = `${wave.tier} (Difficulty ${wave.difficulty})`;
+    DOM.battle.enemyHealth.textContent = `${Math.max(0, enemy.health).toFixed(1)} / ${enemy.maxHealth}`;
+    DOM.battle.enemyAttack.textContent = enemy.attack;
+    DOM.battle.enemyDefense.textContent = enemy.defense;
+    DOM.battle.enemyStatus.textContent = renderStatusEffects(enemy.statusEffects);
+    DOM.battle.playerStatus.textContent = renderStatusEffects(battlePlayer.statusEffects);
 
     const lastLog = battleState.log[battleState.log.length - 1];
     if (lastLog) {
-        const logElement = document.getElementById('battle-log');
         const line = document.createElement('div');
         line.textContent = lastLog;
-        logElement.appendChild(line);
-        logElement.scrollTop = logElement.scrollHeight;
+        DOM.battle.log.appendChild(line);
+        DOM.battle.log.scrollTop = DOM.battle.log.scrollHeight;
     }
 }
 
 function previewNextEnemy() {
     const preview = getEnemyPreview(player);
-    document.getElementById('battle-enemy-name').textContent = preview.enemy.name;
-    document.getElementById('battle-wave').textContent = `${preview.wave.tier} (Difficulty ${preview.wave.difficulty})`;
-    document.getElementById('battle-enemy-health').textContent = `${preview.enemy.health} / ${preview.enemy.maxHealth}`;
-    document.getElementById('battle-enemy-attack').textContent = preview.enemy.attack;
-    document.getElementById('battle-enemy-defense').textContent = preview.enemy.defense;
-    document.getElementById('battle-enemy-status').textContent = 'None';
-    document.getElementById('battle-player-status').textContent = renderStatusEffects(player.statusEffects);
-    document.getElementById('battle-log').textContent = 'Waiting for battle start...';
+    DOM.battle.enemyName.textContent = preview.enemy.name;
+    DOM.battle.wave.textContent = `${preview.wave.tier} (Difficulty ${preview.wave.difficulty})`;
+    DOM.battle.enemyHealth.textContent = `${preview.enemy.health} / ${preview.enemy.maxHealth}`;
+    DOM.battle.enemyAttack.textContent = preview.enemy.attack;
+    DOM.battle.enemyDefense.textContent = preview.enemy.defense;
+    DOM.battle.enemyStatus.textContent = 'None';
+    DOM.battle.playerStatus.textContent = renderStatusEffects(player.statusEffects);
+    DOM.battle.log.textContent = 'Waiting for battle start...';
 }
 
 function handleBattleEnd(battleState, playerWon) {
     if (playerWon && battleState.rewards) {
-        document.getElementById('battle-reward-gold').textContent = battleState.rewards.gold;
-        document.getElementById('battle-reward-xp').textContent = battleState.rewards.experience;
-        document.getElementById('battle-reward-loot').textContent = battleState.rewards.loot || 'None';
-        document.getElementById('battle-reward-tier').textContent = battleState.rewards.tier;
+        DOM.battle.rewardGold.textContent = battleState.rewards.gold;
+        DOM.battle.rewardXP.textContent = battleState.rewards.experience;
+        DOM.battle.rewardLoot.textContent = battleState.rewards.loot || 'None';
+        DOM.battle.rewardTier.textContent = battleState.rewards.tier;
         graphics.updateInventory(player);
     } else {
-        document.getElementById('battle-reward-gold').textContent = 0;
-        document.getElementById('battle-reward-xp').textContent = 0;
-        document.getElementById('battle-reward-loot').textContent = 'None';
-        document.getElementById('battle-reward-tier').textContent = 'None';
+        DOM.battle.rewardGold.textContent = 0;
+        DOM.battle.rewardXP.textContent = 0;
+        DOM.battle.rewardLoot.textContent = 'None';
+        DOM.battle.rewardTier.textContent = 'None';
     }
-    player.updatePlayerStats();
-    graphics.updateStatsColors(player);
-    graphics.showMessage(playerWon ? 'You won the battle!' : 'You were defeated.');
+    refreshUI();
+    showMessage(playerWon ? 'You won the battle!' : 'You were defeated.', playerWon ? 'success' : 'error');
+    showToast(playerWon ? 'You won the battle!' : 'You were defeated.', playerWon ? 'success' : 'error');
     previewNextEnemy();
 }
 
-document.getElementById('start-battle').addEventListener('click', async () => {
-    document.getElementById('start-battle').disabled = true;
-    document.getElementById('battle-log').textContent = '';
-    const battleState = await startBattle(player, {
-        onBattleStart: updateBattlePanel,
-        onUpdate: updateBattlePanel,
-        onBattleEnd: handleBattleEnd
-    });
-    document.getElementById('start-battle').disabled = false;
-    return battleState;
+DOM.battle.startButton.addEventListener('click', async () => {
+    DOM.battle.startButton.disabled = true;
+    DOM.battle.log.textContent = '';
+    setAsyncStatus('Preparing battle...', 'loading');
+    try {
+        const battleState = await startBattle(player, {
+            onBattleStart: (state) => {
+                setAsyncStatus('Battle in progress...', 'loading');
+                updateBattlePanel(state);
+            },
+            onUpdate: updateBattlePanel,
+            onBattleEnd: (state, playerWon) => {
+                handleBattleEnd(state, playerWon);
+                setAsyncStatus('Ready', 'idle');
+                player.saveDataToLocalStorage();
+            }
+        });
+        return battleState;
+    } catch (error) {
+        console.error('Battle failed to start', error);
+        setAsyncStatus('Battle failed to start', 'error');
+        showMessage('Battle failed to start. Please try again.', 'error');
+        showToast('Battle failed to start. Please try again.', 'error');
+        return null;
+    } finally {
+        DOM.battle.startButton.disabled = false;
+    }
 });
 
 previewNextEnemy();

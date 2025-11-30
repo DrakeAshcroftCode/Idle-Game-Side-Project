@@ -55,8 +55,65 @@
         button:hover {
             background-color: #ffd700;
         }
-        .message { 
-            height:15px;
+        .status-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .message {
+            min-height: 18px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            background: #eef6ff;
+            color: #1a1a1a;
+            transition: opacity 0.2s ease;
+        }
+        .message.success { background: #d8f7e1; }
+        .message.error { background: #ffe1e1; }
+        .message.info { background: #eef6ff; }
+        .toast {
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            background: #000000cc;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: inline-block;
+            align-self: flex-start;
+            font-size: 0.9rem;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .async-status {
+            font-size: 0.9rem;
+            color: #333;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .async-status[data-state="loading"]::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            border: 2px solid #999;
+            border-top-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 0.9s linear infinite;
+        }
+        .async-status[data-state="error"] {
+            color: #b30000;
+        }
+        .async-status[data-state="idle"] {
+            color: #2d5b1d;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
        .fa-exclamation {
@@ -113,6 +170,7 @@
         <div id="inventory" class="window" role="tabpanel" aria-hidden="true">
             <div class="window-body">
                 <p>Inventory content goes here</p>
+                <div id="inventory-list" aria-live="polite"></div>
 
             </div>
         </div>
@@ -133,7 +191,11 @@
                     <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
                     <p>Current XP: <span id="current-xp">0</span></p>
                     <p>Player Money: <span id="player-money">0</span></p>
-                    <p id="message" class="message"></p>
+                    <div class="status-stack">
+                        <p id="message" class="message info"></p>
+                        <span id="action-toast" class="toast" aria-live="polite"></span>
+                        <span id="async-status" class="async-status" data-state="idle">Ready</span>
+                    </div>
                 </div>
                 <p>You're in your room. There's so much room for activities!</p>
                 <div id="actions-content">
@@ -203,12 +265,5 @@
   <!-- <button id="save">Save</button> -->
   <button id="clearData" class="fas fa-exclamation"> Clear Save</button>
     <script type="module" src="app.js"></script>
-    <script>
-        // Add event listener for the beforeunload event
-        window.addEventListener('beforeunload', function(event) {
-            // Call saveDataToLocalStorage() to save the player's data
-            player.saveDataToLocalStorage();
-        });
-    </script>
 </body>
 </html>
