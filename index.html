@@ -148,6 +148,20 @@
             position: flex;
         }
 
+        #shop-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .shop-item {
+            border: 1px solid #b5b5b5;
+            padding: 8px;
+            border-radius: 4px;
+            background: #f3f3f3;
+        }
+
     </style>
 </head>
 <body>
@@ -179,6 +193,11 @@
                 <img id="shopImage" src="shop.png" alt="Bedroom Image">
                 <h4 id="shopText">NightStop</h4>
                 <h5 id="shopText">Welcome! We have wares if you have coin.</h5>
+                <div class="stats">
+                    <p>Gold: <span id="shop-gold">0</span></p>
+                    <p>Shadow Essence: <span id="shop-essence">0</span></p>
+                </div>
+                <div id="shop-items" aria-live="polite"></div>
             </div>
         </div>
         <div id="actions" class="window" role="tabpanel" aria-hidden="false">
@@ -191,6 +210,7 @@
                     <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
                     <p>Current XP: <span id="current-xp">0</span></p>
                     <p>Player Money: <span id="player-money">0</span></p>
+                    <p>Shadow Essence: <span id="shadow-essence">0</span></p>
                     <div class="status-stack">
                         <p id="message" class="message info"></p>
                         <span id="action-toast" class="toast" aria-live="polite"></span>
@@ -229,6 +249,7 @@
                 <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
                 <p>Current XP: <span id="current-xp">0</span></p>
                 <p>Player Money: <span id="player-money">0</span></p>
+                <p>Shadow Essence: <span id="shadow-essence">0</span></p>
                 <p>Player Damage: <span id="player-damage">10</span></p>
                 <p>Player Defense: <span id="player-defense">5</span></p>
                 <p>Player Stamina: <span id="player-stamina">100</span></p>
@@ -252,8 +273,11 @@
                 <div>
                     <p>Rewards:</p>
                     <p>Gold: <span id="battle-reward-gold">0</span></p>
+                    <p>Shadow Essence: <span id="battle-reward-essence">0</span></p>
                     <p>Experience: <span id="battle-reward-xp">0</span></p>
                     <p>Loot: <span id="battle-reward-loot">None</span></p>
+                    <p>Items:</p>
+                    <div id="battle-reward-items">None</div>
                     <p>Tier: <span id="battle-reward-tier">None</span></p>
                 </div>
             </div>
