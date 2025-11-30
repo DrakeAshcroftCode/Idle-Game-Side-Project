@@ -1,4 +1,6 @@
 import { startBattle, getEnemyPreview } from '/battlesystem.js';
+import { addItemsToInventory, normalizeItems, removeItemsFromInventory } from '/inventorySystem.js';
+import { SHOP_CATALOG, purchaseItem } from '/shopSystem.js';
 
 // Progression & pacing constants
 const BASE_XP_TO_NEXT_LEVEL = 75;
@@ -140,6 +142,7 @@ const DOM = {
         countdown: document.getElementById('countdown-timer'),
         currentXP: document.getElementById('current-xp'),
         money: document.getElementById('player-money'),
+        essence: document.getElementById('shadow-essence'),
         damage: document.getElementById('player-damage'),
         defense: document.getElementById('player-defense'),
         stamina: document.getElementById('player-stamina'),
@@ -150,6 +153,11 @@ const DOM = {
     toast: document.getElementById('action-toast'),
     asyncStatus: document.getElementById('async-status'),
     inventoryList: document.getElementById('inventory-list'),
+    shop: {
+        walletGold: document.getElementById('shop-gold'),
+        walletEssence: document.getElementById('shop-essence'),
+        items: document.getElementById('shop-items')
+    },
     battle: {
         enemyName: document.getElementById('battle-enemy-name'),
         wave: document.getElementById('battle-wave'),
@@ -161,7 +169,9 @@ const DOM = {
         log: document.getElementById('battle-log'),
         rewardGold: document.getElementById('battle-reward-gold'),
         rewardXP: document.getElementById('battle-reward-xp'),
+        rewardEssence: document.getElementById('battle-reward-essence'),
         rewardLoot: document.getElementById('battle-reward-loot'),
+        rewardItems: document.getElementById('battle-reward-items'),
         rewardTier: document.getElementById('battle-reward-tier'),
         startButton: document.getElementById('start-battle'),
     }
@@ -268,6 +278,7 @@ export class player {
         this.timer = BASE_ACTION_TIMER;
         this.currentXP = 0;
         this.playerMoney = 0;
+        this.shadowEssence = 0;
         this.actionSuccessRate = 0.5;
         this.inventory = [];
 
@@ -292,8 +303,9 @@ export class player {
             this.timer = savedData.timer ?? this.timer;
             this.currentXP = savedData.currentXP ?? this.currentXP;
             this.playerMoney = savedData.playerMoney ?? this.playerMoney;
+            this.shadowEssence = savedData.shadowEssence ?? this.shadowEssence;
             this.actionSuccessRate = savedData.actionSuccessRate ?? this.actionSuccessRate;
-            this.inventory = savedData.inventory ? savedData.inventory : [];
+            this.inventory = normalizeItems(savedData.inventory || []);
             this.damage = savedData.damage ?? this.damage;
             this.defense = savedData.defense ?? this.defense;
             this.stamina = savedData.stamina ?? this.stamina;
@@ -327,6 +339,7 @@ export class player {
         DOM.stats.countdown.textContent = this.timer;
         DOM.stats.currentXP.textContent = this.currentXP;
         DOM.stats.money.textContent = this.playerMoney;
+        DOM.stats.essence.textContent = this.shadowEssence;
         DOM.stats.damage.textContent = this.damage;
         DOM.stats.defense.textContent = this.defense;
         DOM.stats.stamina.textContent = this.stamina;
@@ -335,6 +348,7 @@ export class player {
     }
 
     saveDataToLocalStorage() {
+        this.inventory = normalizeItems(this.inventory);
         const dataToSave = {
             level: this.level,
             maxLevel: this.maxLevel,
@@ -344,6 +358,7 @@ export class player {
             timer: this.timer,
             currentXP: this.currentXP,
             playerMoney: this.playerMoney,
+            shadowEssence: this.shadowEssence,
             actionSuccessRate: this.actionSuccessRate,
             inventory: this.inventory,
             damage: this.damage,
@@ -390,14 +405,11 @@ export class player {
     }
 
     addToInventory(item) {
-        this.inventory.push(item);
+        addItemsToInventory(this.inventory, [item]);
     }
 
     removeFromInventory(item) {
-        const index = this.inventory.indexOf(item);
-        if (index !== -1) {
-            this.inventory.splice(index, 1);
-        }
+        removeItemsFromInventory(this.inventory, [item]);
     }
 
     displayInventory() {
@@ -482,7 +494,8 @@ class graphics {
         inventoryElement.appendChild(header);
         player.inventory.forEach(item => {
             const itemElement = document.createElement('div');
-            itemElement.textContent = item.name;
+            const qty = item.quantity ?? 1;
+            itemElement.textContent = qty > 1 ? `${item.name} x${qty}` : item.name;
             inventoryElement.appendChild(itemElement);
         });
     }
@@ -491,10 +504,54 @@ class graphics {
 player = new player(); // Instantiate the player object
 graphics = new graphics();
 
+function renderShopWallet() {
+    if (!DOM.shop.walletGold || !DOM.shop.walletEssence) return;
+    DOM.shop.walletGold.textContent = player.playerMoney;
+    DOM.shop.walletEssence.textContent = player.shadowEssence;
+}
+
+function renderShopItems() {
+    if (!DOM.shop.items) return;
+    DOM.shop.items.innerHTML = '';
+
+    SHOP_CATALOG.forEach(item => {
+        const itemCard = document.createElement('div');
+        itemCard.classList.add('shop-item');
+
+        const title = document.createElement('strong');
+        title.textContent = item.name;
+
+        const description = document.createElement('div');
+        description.textContent = item.description;
+
+        const cost = document.createElement('div');
+        cost.textContent = `Cost: ${item.cost.gold} gold + ${item.cost.essence} essence`;
+
+        const button = document.createElement('button');
+        button.textContent = 'Buy';
+        button.addEventListener('click', () => {
+            const result = purchaseItem(player, item.id);
+            showMessage(result.message, result.success ? 'success' : 'error');
+            if (result.success) {
+                refreshUI();
+                player.saveDataToLocalStorage();
+            }
+            renderShopWallet();
+        });
+
+        itemCard.appendChild(title);
+        itemCard.appendChild(description);
+        itemCard.appendChild(cost);
+        itemCard.appendChild(button);
+        DOM.shop.items.appendChild(itemCard);
+    });
+}
+
 function refreshUI(message, tone = 'info') {
     player.updatePlayerStats();
     graphics.updateStatsColors(player);
     graphics.updateInventory(player);
+    renderShopWallet();
     if (message) {
         showMessage(message, tone);
     }
@@ -612,6 +669,8 @@ const item = new Item('Health Potion', 'Restores health', {
     health: 10
 });
 player.displayInventory();
+renderShopItems();
+renderShopWallet();
 refreshUI('Welcome back!', 'info');
 setAsyncStatus('Ready', 'idle');
 
@@ -620,6 +679,22 @@ function renderStatusEffects(effects) {
         return 'None';
     }
     return effects.map(effect => `${effect.label || effect.type} (${effect.duration} turns)`).join(', ');
+}
+
+function renderRewardItems(items = []) {
+    if (!DOM.battle.rewardItems) return;
+    DOM.battle.rewardItems.innerHTML = '';
+    const normalizedItems = normalizeItems(items);
+    if (!normalizedItems.length) {
+        DOM.battle.rewardItems.textContent = 'None';
+        return;
+    }
+    normalizedItems.forEach(item => {
+        const entry = document.createElement('div');
+        const qty = item.quantity ?? 1;
+        entry.textContent = qty > 1 ? `${item.name} x${qty}` : item.name;
+        DOM.battle.rewardItems.appendChild(entry);
+    });
 }
 
 function updateBattlePanel(battleState) {
@@ -657,20 +732,26 @@ function previewNextEnemy() {
 
 function handleBattleEnd(battleState, playerWon) {
     if (playerWon && battleState.rewards) {
-        DOM.battle.rewardGold.textContent = battleState.rewards.gold;
-        DOM.battle.rewardXP.textContent = battleState.rewards.experience;
-        DOM.battle.rewardLoot.textContent = battleState.rewards.loot || 'None';
-        DOM.battle.rewardTier.textContent = battleState.rewards.tier;
+        const { currencies, xp, items, tier } = battleState.rewards;
+        DOM.battle.rewardGold.textContent = currencies.gold;
+        DOM.battle.rewardEssence.textContent = currencies.essence;
+        DOM.battle.rewardXP.textContent = xp;
+        DOM.battle.rewardLoot.textContent = items?.[0]?.name || 'None';
+        DOM.battle.rewardTier.textContent = tier;
+        renderRewardItems(items);
         graphics.updateInventory(player);
     } else {
         DOM.battle.rewardGold.textContent = 0;
+        DOM.battle.rewardEssence.textContent = 0;
         DOM.battle.rewardXP.textContent = 0;
         DOM.battle.rewardLoot.textContent = 'None';
+        DOM.battle.rewardItems.textContent = 'None';
         DOM.battle.rewardTier.textContent = 'None';
     }
     refreshUI();
     showMessage(playerWon ? 'You won the battle!' : 'You were defeated.', playerWon ? 'success' : 'error');
     showToast(playerWon ? 'You won the battle!' : 'You were defeated.', playerWon ? 'success' : 'error');
+    renderShopWallet();
     previewNextEnemy();
 }
 

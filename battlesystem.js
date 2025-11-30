@@ -1,3 +1,5 @@
+import { addItemsToInventory } from './inventorySystem.js';
+
 export class Enemy {
     constructor({ name, health, attack, defense, staminaRegenRate, mana, difficulty, rewardTier, statusVulnerabilities = [] }) {
         this.name = name;
@@ -164,20 +166,31 @@ function calculateCriticalMultiplier(baseChance = 0.15, criticalBonus = 0.5) {
 }
 
 export function calculateBattleRewards(enemy) {
-    const gold = Math.floor(10 * enemy.difficulty + Math.random() * 5 * enemy.difficulty);
-    const experience = Math.floor(8 * enemy.difficulty + Math.random() * 3 * enemy.difficulty);
+    const currencies = {
+        gold: Math.floor(12 * enemy.difficulty + Math.random() * 6 * enemy.difficulty),
+        essence: Math.max(1, Math.ceil(enemy.difficulty * 0.6))
+    };
+    const experience = Math.floor(9 * enemy.difficulty + Math.random() * 3 * enemy.difficulty);
     const lootTable = {
-        basic: ["Faded Trinket"],
-        standard: ["Hardened Resolve", "Focus Token"],
-        elite: ["Echoing Sigil", "Crystalized Courage"]
+        basic: [{ name: "Faded Trinket", quantity: 1 }],
+        standard: [
+            { name: "Hardened Resolve", quantity: 1 },
+            { name: "Focus Token", quantity: 1 }
+        ],
+        elite: [
+            { name: "Echoing Sigil", quantity: 1 },
+            { name: "Crystalized Courage", quantity: 1 }
+        ]
     };
     const lootOptions = lootTable[enemy.rewardTier] || [];
-    const loot = lootOptions.length ? lootOptions[Math.floor(Math.random() * lootOptions.length)] : null;
+    const items = lootOptions.length
+        ? [lootOptions[Math.floor(Math.random() * lootOptions.length)]]
+        : [];
 
     return {
-        gold,
-        experience,
-        loot,
+        currencies,
+        xp: experience,
+        items,
         tier: enemy.rewardTier
     };
 }
@@ -266,11 +279,10 @@ function finishBattle(battleState, callbacks, playerWon) {
     battleState.active = false;
     if (playerWon) {
         battleState.rewards = calculateBattleRewards(battleState.enemy);
-        battleState.player.currentXP += battleState.rewards.experience;
-        battleState.player.playerMoney += battleState.rewards.gold;
-        if (battleState.rewards.loot) {
-            battleState.player.inventory.push({ name: battleState.rewards.loot });
-        }
+        battleState.player.currentXP += battleState.rewards.xp;
+        battleState.player.playerMoney += battleState.rewards.currencies.gold;
+        battleState.player.shadowEssence += battleState.rewards.currencies.essence;
+        addItemsToInventory(battleState.player.inventory, battleState.rewards.items);
     }
     callbacks.onBattleEnd?.(battleState, playerWon);
 }
