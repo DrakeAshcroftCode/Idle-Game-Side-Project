@@ -9,6 +9,7 @@ const XP_GAIN_GROWTH = 1.1;
 const ACTION_POINT_PER_LEVEL = 3;
 const BASE_ACTION_TIMER = 6;
 const REST_TIMER = 20;
+const FAILURE_PITY_FACTOR = 0.2;
 
 const UPGRADE_EFFECTS = {
     timerReductionBadge: {
@@ -704,6 +705,8 @@ function pullActiveBuff() {
 function applyOutcome(config, success) {
     const { timerReset, timerPenalty } = getActionTimers(config);
     const xpGain = Math.round((config.xp || 0) * player.baseXPMultiplier);
+    const pityXP = Math.max(0, Math.floor(xpGain * FAILURE_PITY_FACTOR));
+    const pityGold = Math.max(0, Math.floor((config.money || 0) * FAILURE_PITY_FACTOR));
     const tone = success ? 'success' : 'error';
     const consumedBuff = pullActiveBuff();
     const timerReduction = consumedBuff?.timerReduction || 0;
@@ -720,12 +723,27 @@ function applyOutcome(config, success) {
     } else {
         if (timerPenalty) {
             const penalizedTimer = player.timer + timerPenalty;
-            player.timer = Math.max(0, penalizedTimer - timerReduction);
+            const cappedTimer = config.timerReset !== undefined
+                ? Math.min(timerReset, penalizedTimer)
+                : penalizedTimer;
+            player.timer = Math.max(0, cappedTimer - timerReduction);
         } else if (timerReduction) {
             player.timer = Math.max(0, player.timer - timerReduction);
         }
-        showMessage(config.failureMessage, tone);
-        showToast(config.failureMessage, tone);
+        if (pityXP) {
+            player.currentXP += pityXP;
+        }
+        if (pityGold) {
+            player.playerMoney += pityGold;
+        }
+
+        const pityParts = [];
+        if (pityXP) pityParts.push(`${pityXP} XP`);
+        if (pityGold) pityParts.push(`${pityGold} gold`);
+        const pityText = pityParts.length ? ` You still earned ${pityParts.join(' and ')}.` : '';
+        const failureMessage = `${config.failureMessage}${pityText}`;
+        showMessage(failureMessage, tone);
+        showToast(failureMessage, tone);
     }
 
     if (config.apRestore) {
