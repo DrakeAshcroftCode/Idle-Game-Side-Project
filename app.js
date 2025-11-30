@@ -789,16 +789,35 @@ setInterval(() => {
     }
     if (player.timer === 0) {
         if (player.idleEnabled) {
-            if (player.actionPoints > 0) {
-                const idleActions = Object.entries(ACTION_CONFIG)
-                    .filter(([, config]) => config.idleEligible)
-                    .map(([key]) => key);
-                const randomAction = idleActions[Math.floor(Math.random() * idleActions.length)];
-                handleAction(randomAction);
-            } else {
-                // Sleep if the player runs out of action points
+            const sleepThreshold = ACTION_CONFIG.sleep?.apThreshold ?? 2;
+            if (player.actionPoints <= sleepThreshold) {
                 handleAction('sleep');
+                return;
             }
+
+            const highValueActions = Object.entries(ACTION_CONFIG)
+                .filter(([, config]) => config.idleEligible && player.actionPoints >= (config.apCost ?? 0))
+                .map(([key, config]) => {
+                    const { timerReset } = getActionTimers(config);
+                    const xpPerSecond = (config.xp || 0) / Math.max(1, timerReset || BASE_ACTION_TIMER);
+                    const weight = Math.max(0.1, xpPerSecond / Math.max(1, config.apCost || 1));
+                    return { key, weight };
+                });
+
+            const totalWeight = highValueActions.reduce((sum, entry) => sum + entry.weight, 0);
+
+            if (totalWeight === 0 || highValueActions.length === 0) {
+                handleAction('sleep');
+                return;
+            }
+
+            let roll = Math.random() * totalWeight;
+            const selected = highValueActions.find(entry => {
+                roll -= entry.weight;
+                return roll <= 0;
+            }) || highValueActions[highValueActions.length - 1];
+
+            handleAction(selected.key);
         } else {
             showMessage("Timer has reached zero. You can take an action now.", 'info');
         }
