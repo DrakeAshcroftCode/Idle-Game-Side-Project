@@ -70,6 +70,17 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        }
+        .action-card--success {
+            border-color: #3fa34d;
+            box-shadow: 0 2px 8px rgba(63, 163, 77, 0.3);
+            background: #e9f8ec;
+        }
+        .action-card--fail {
+            border-color: #c43d3d;
+            box-shadow: 0 2px 8px rgba(196, 61, 61, 0.3);
+            background: #fcecec;
         }
         .action-card__header {
             display: flex;
@@ -147,6 +158,9 @@
             align-self: flex-start;
             font-size: 0.9rem;
         }
+        .toast.success { background: #1f7a2e; }
+        .toast.error { background: #b3261e; }
+        .toast.info { background: #000000cc; }
         .toast.show {
             opacity: 1;
             transform: translateY(0);
@@ -225,6 +239,38 @@
             background: #f3f3f3;
         }
 
+        .loot-ticker {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 80px;
+            overflow: hidden;
+            font-size: 0.9rem;
+            color: #1f2a44;
+        }
+        .loot-ticker__item {
+            background: #eef6ff;
+            border: 1px solid #cdd4ff;
+            border-radius: 6px;
+            padding: 4px 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transform: translateY(8px);
+            opacity: 0;
+            animation: ticker-in 0.35s ease forwards;
+        }
+        .loot-ticker__item[data-tone="success"] { border-color: #9bd4a4; background: #e9f8ec; }
+        .loot-ticker__item[data-tone="error"] { border-color: #f0b3b3; background: #fcecec; }
+        .loot-ticker__item[data-tone="info"] { border-color: #cdd4ff; background: #eef6ff; }
+        .loot-ticker__icon { color: #5c8bff; }
+        .loot-ticker__value { font-weight: 600; }
+        @keyframes ticker-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
     </style>
 </head>
 <body>
@@ -279,6 +325,7 @@
                         <p id="message" class="message info"></p>
                         <span id="action-toast" class="toast" aria-live="polite"></span>
                         <span id="async-status" class="async-status" data-state="idle">Ready</span>
+                        <div id="loot-ticker" class="loot-ticker" aria-live="polite"></div>
                     </div>
                 </div>
                 <p>You're in your room. There's so much room for activities!</p>
