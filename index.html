@@ -55,6 +55,45 @@
         button:hover {
             background-color: #ffd700;
         }
+
+        body {
+            margin: 12px;
+        }
+
+        .window {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .player-header {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #fdfdfd;
+            border: 1px solid #b5b5b5;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 12px;
+        }
+
+        .player-header__stats {
+            display: grid;
+            gap: 6px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 6px 12px;
+        }
+
+        .stat-grid p {
+            margin: 0;
+        }
         .action-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -133,7 +172,7 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-top: 8px;
+            margin-top: 0;
         }
         .message {
             min-height: 18px;
@@ -142,6 +181,36 @@
             background: #eef6ff;
             color: #1a1a1a;
             transition: opacity 0.2s ease;
+        }
+
+        .tab-content {
+            margin-top: 12px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .tab-content .stats {
+            border: 1px solid #b5b5b5;
+            border-radius: 6px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+
+        .battle-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px;
+            align-items: start;
+        }
+
+        .battle-panel {
+            border: 1px solid #b5b5b5;
+            border-radius: 6px;
+            background: #f9f9f9;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         .message.success { background: #d8f7e1; }
         .message.error { background: #ffe1e1; }
@@ -274,14 +343,34 @@
     </style>
 </head>
 <body>
-    <div class="window-body">
-
+  <div class="window">
     <div class="title-bar">
         <div class="title-bar-text">Idle Hakiko</div>
         <div class="title-bar-controls"></div>
     </div>
-    
+
     <div class="window-body">
+        <div class="player-header">
+            <div class="player-header__stats">
+                <strong>Player Overview</strong>
+                <div class="stat-grid">
+                    <p>Current Level: <span id="current-level" style="color: green;">1</span></p>
+                    <p>XP to Next Level: <span id="xp-to-next-level">50</span></p>
+                    <p>Action Points: <span id="action-points">10</span></p>
+                    <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
+                    <p>Timer Mods: <span id="timer-modifiers">None</span></p>
+                    <p>Current XP: <span id="current-xp">0</span></p>
+                    <p>Player Money: <span id="player-money">0</span></p>
+                    <p>Shadow Essence: <span id="shadow-essence">0</span></p>
+                </div>
+            </div>
+            <div class="status-stack">
+                <p id="message" class="message info"></p>
+                <span id="action-toast" class="toast" aria-live="polite"></span>
+                <span id="async-status" class="async-status" data-state="idle">Ready</span>
+                <div id="loot-ticker" class="loot-ticker" aria-live="polite"></div>
+            </div>
+        </div>
         <menu role="tablist">
             <li role="tab" aria-selected="true"><a href="#actions" role="tab" aria-selected="true">Home</a></li>
             <li role="tab"><a href="#shop" role="tab">Shop</a></li>
@@ -291,14 +380,14 @@
             <li role="tab"><a href="#performance" role="tab">Unused</a></li>
           </menu>
         <div id="inventory" class="window" role="tabpanel" aria-hidden="true">
-            <div class="window-body">
+            <div class="window-body tab-content">
                 <p>Inventory content goes here</p>
                 <div id="inventory-list" aria-live="polite"></div>
 
             </div>
         </div>
         <div id="shop" class="window" role="tabpanel" aria-hidden="true">
-            <div class="window-body">
+            <div class="window-body tab-content">
                 <img id="shopImage" src="shop.png" alt="Bedroom Image">
                 <h4 id="shopText">NightStop</h4>
                 <h5 id="shopText">Welcome! We have wares if you have coin.</h5>
@@ -310,68 +399,47 @@
             </div>
         </div>
         <div id="actions" class="window" role="tabpanel" aria-hidden="false">
-            <div class="window-body">
+            <div class="window-body tab-content">
                 <img id="bedroomImage" src="bedroom.jpg" alt="Bedroom Image">
-                <div id="stats" class="stats">
-                    <p>Current Level: <span id="current-level" style="color: green;">1</span></p>
-                    <p>XP to Next Level: <span id="xp-to-next-level">50</span></p>
-                    <p>Action Points: <span id="action-points">10</span></p>
-                    <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
-                    <p>Timer Mods: <span id="timer-modifiers">None</span></p>
-                    <p>Current XP: <span id="current-xp">0</span></p>
-                    <p>Player Money: <span id="player-money">0</span></p>
-                    <p>Shadow Essence: <span id="shadow-essence">0</span></p>
-                    <div class="status-stack">
-                        <p id="message" class="message info"></p>
-                        <span id="action-toast" class="toast" aria-live="polite"></span>
-                        <span id="async-status" class="async-status" data-state="idle">Ready</span>
-                        <div id="loot-ticker" class="loot-ticker" aria-live="polite"></div>
-                    </div>
-                </div>
                 <p>You're in your room. There's so much room for activities!</p>
                 <div id="actions-content" class="action-grid" aria-live="polite"></div>
                 <button id="toggle-idle">Toggle Idle Mode</button>
-
-
-
-            <br>
-
-        </div>
-    <!-- </div> -->
-      </div>
-      <div id="devices" class="window" role="tabpanel" aria-hidden="true"> <!-- Set aria-hidden to false -->
-        <div class="window-body">
-            <button id="start-battle">Start</button>
-            <div id="stats" class="stats">
-                <p>Current Level: <span id="current-level" style="color: green;">1</span></p>
-                <p>XP to Next Level: <span id="xp-to-next-level">50</span></p>
-                <p>Action Points: <span id="action-points">10</span></p>
-                <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
-                <p>Current XP: <span id="current-xp">0</span></p>
-                <p>Player Money: <span id="player-money">0</span></p>
-                <p>Shadow Essence: <span id="shadow-essence">0</span></p>
-                <p>Player Damage: <span id="player-damage">10</span></p>
-                <p>Player Defense: <span id="player-defense">5</span></p>
-                <p>Player Stamina: <span id="player-stamina">100</span></p>
-                <p>Player Mana: <span id="player-mana">50</span></p>
-                <p>Player Health: <span id="player-health">100</span></p>
             </div>
-            <div id="battle-info" class="stats">
-                <p>Wave: <span id="battle-wave">Previewing...</span></p>
-                <p>Enemy: <span id="battle-enemy-name">None</span></p>
-                <p>Enemy Health: <span id="battle-enemy-health">0 / 0</span></p>
-                <p>Enemy Attack: <span id="battle-enemy-attack">0</span></p>
-                <p>Enemy Defense: <span id="battle-enemy-defense">0</span></p>
-                <p>Enemy Status: <span id="battle-enemy-status">None</span></p>
-                <p>Your Status: <span id="battle-player-status">None</span></p>
-                <div>
-                    <p>Battle Log:</p>
-                    <div id="battle-log" style="height: 120px; overflow-y: auto; border: 1px solid #999; padding: 4px; background: #f5f5f5;">
+        </div>
+      <div id="devices" class="window" role="tabpanel" aria-hidden="true"> <!-- Set aria-hidden to false -->
+        <div class="window-body tab-content">
+            <div class="battle-layout">
+                <div class="battle-panel">
+                    <div class="battle-controls">
+                        <button id="start-battle">Start</button>
+                    </div>
+                    <div id="battle-info" class="stats">
+                        <strong>Enemy Preview</strong>
+                        <p>Wave: <span id="battle-wave">Previewing...</span></p>
+                        <p>Enemy: <span id="battle-enemy-name">None</span></p>
+                        <p>Enemy Health: <span id="battle-enemy-health">0 / 0</span></p>
+                        <p>Enemy Attack: <span id="battle-enemy-attack">0</span></p>
+                        <p>Enemy Defense: <span id="battle-enemy-defense">0</span></p>
+                        <p>Enemy Status: <span id="battle-enemy-status">None</span></p>
+                    </div>
+                </div>
+                <div class="battle-panel">
+                    <strong>Player Combat Stats</strong>
+                    <p>Player Damage: <span id="player-damage">10</span></p>
+                    <p>Player Defense: <span id="player-defense">5</span></p>
+                    <p>Player Stamina: <span id="player-stamina">100</span></p>
+                    <p>Player Mana: <span id="player-mana">50</span></p>
+                    <p>Player Health: <span id="player-health">100</span></p>
+                    <p>Your Status: <span id="battle-player-status">None</span></p>
+                </div>
+                <div class="battle-panel">
+                    <strong>Battle Log</strong>
+                    <div id="battle-log" style="height: 160px; overflow-y: auto; border: 1px solid #999; padding: 6px; background: #f5f5f5;">
                         Waiting for battle start...
                     </div>
                 </div>
-                <div>
-                    <p>Rewards:</p>
+                <div class="battle-panel">
+                    <strong>Rewards</strong>
                     <p>Gold: <span id="battle-reward-gold">0</span></p>
                     <p>Shadow Essence: <span id="battle-reward-essence">0</span></p>
                     <p>Experience: <span id="battle-reward-xp">0</span></p>

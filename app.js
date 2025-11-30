@@ -270,8 +270,8 @@ function navigate(event) {
     const targetId = this.getAttribute('href').substring(1);
     const targetDiv = document.getElementById(targetId);
 
-    // Hide all divs except the target div
-    document.querySelectorAll('.window').forEach(div => {
+    // Hide all tab panels except the target div
+    document.querySelectorAll('.window[role="tabpanel"]').forEach(div => {
         if (div.id === targetId) {
             div.style.display = 'block'; // Show target div
         } else {
