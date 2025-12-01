@@ -1,5 +1,20 @@
-import { applyQuestProgress, createDefaultQuestState, getActiveQuest, startBattle, getEnemyPreview } from '/battlesystem.js';
-import { addItemsToInventory, isItemUsable, normalizeItems, removeItemsFromInventory, useInventoryItem } from '/inventorySystem.js';
+import {
+    applyQuestProgress,
+    createDefaultQuestState,
+    getActiveQuest,
+    startBattle,
+    getEnemyPreview
+} from '/battlesystem.js';
+import {
+    addItemsToInventory,
+    CRAFTING_RECIPES,
+    hasRequiredItems,
+    isCraftingIngredient,
+    isItemUsable,
+    normalizeItems,
+    removeItemsFromInventory,
+    useInventoryItem
+} from '/inventorySystem.js';
 import { SHOP_CATALOG, purchaseItem } from '/shopSystem.js';
 
 // Progression & pacing constants
@@ -19,6 +34,10 @@ const UPGRADE_EFFECTS = {
     focusCharm: {
         penaltyReduction: 2,
         label: '-2s failure penalty'
+    },
+    apTalisman: {
+        apRestoreBonus: 3,
+        label: '+3 AP on rest'
     }
 };
 
@@ -299,6 +318,16 @@ function getTimerModifiers() {
     return modifiers;
 }
 
+function getApRestoreBonus() {
+    const ownedUpgrades = player?.upgrades || {};
+    return Object.entries(UPGRADE_EFFECTS).reduce((bonus, [key, effect]) => {
+        if (ownedUpgrades[key] && effect.apRestoreBonus) {
+            return bonus + effect.apRestoreBonus;
+        }
+        return bonus;
+    }, 0);
+}
+
 function getActionTimers(config) {
     const tier = getLevelTier(player?.level || 1);
     const baseReset = config.timerReset ?? BASE_ACTION_TIMER;
@@ -333,6 +362,10 @@ const DOM = {
     asyncStatus: document.getElementById('async-status'),
     lootTicker: document.getElementById('loot-ticker'),
     inventoryList: document.getElementById('inventory-list'),
+    crafting: {
+        recipes: document.getElementById('crafting-recipes'),
+        status: document.getElementById('crafting-status')
+    },
     actionsContent: document.getElementById('actions-content'),
     shop: {
         walletGold: document.getElementById('shop-gold'),
@@ -512,7 +545,8 @@ export class player {
         this.activeActionBuff = null;
         this.upgrades = {
             timerReductionBadge: false,
-            focusCharm: false
+            focusCharm: false,
+            apTalisman: false
         };
         this.questState = createDefaultQuestState();
 
@@ -758,6 +792,13 @@ class graphics {
             label.textContent = qty > 1 ? `${item.name} x${qty}` : item.name;
             itemElement.appendChild(label);
 
+            if (isCraftingIngredient(item.name)) {
+                const ingredientTag = document.createElement('span');
+                ingredientTag.classList.add('pill', 'pill--muted');
+                ingredientTag.textContent = 'Ingredient';
+                itemElement.appendChild(ingredientTag);
+            }
+
             if (isItemUsable(item.name)) {
                 const useButton = document.createElement('button');
                 useButton.textContent = 'Use';
@@ -961,10 +1002,100 @@ function renderShopItems() {
     });
 }
 
+function getInventoryQuantity(itemName) {
+    const entry = player.inventory.find(item => item.name === itemName);
+    return entry?.quantity ?? 0;
+}
+
+function renderCraftingRecipes() {
+    if (!DOM.crafting?.recipes) return;
+    DOM.crafting.recipes.innerHTML = '';
+    if (DOM.crafting.status) {
+        DOM.crafting.status.textContent = 'Spend battle drops to craft permanent upgrades.';
+    }
+
+    CRAFTING_RECIPES.forEach(recipe => {
+        const card = document.createElement('div');
+        card.classList.add('crafting-card');
+
+        const title = document.createElement('div');
+        title.classList.add('crafting-card__title');
+        title.textContent = recipe.name;
+
+        const description = document.createElement('div');
+        description.classList.add('crafting-card__description');
+        description.textContent = recipe.description;
+
+        const requirements = document.createElement('ul');
+        requirements.classList.add('crafting-card__requirements');
+
+        recipe.requirements.forEach(req => {
+            const li = document.createElement('li');
+            const ownedQty = getInventoryQuantity(req.name);
+            const meetsReq = ownedQty >= (req.quantity ?? 1);
+            li.textContent = `${req.name} x${req.quantity} (You have ${ownedQty})`;
+            li.dataset.state = meetsReq ? 'ready' : 'missing';
+            requirements.appendChild(li);
+        });
+
+        const actionRow = document.createElement('div');
+        actionRow.classList.add('crafting-card__actions');
+        const ownedUpgrade = recipe.result?.upgrade && player.upgrades?.[recipe.result.upgrade];
+        const canCraft = hasRequiredItems(player.inventory, recipe.requirements) && !ownedUpgrade;
+
+        const status = document.createElement('span');
+        status.classList.add('crafting-card__status');
+        status.textContent = ownedUpgrade ? 'Crafted' : canCraft ? 'Ready' : 'Missing ingredients';
+
+        const button = document.createElement('button');
+        button.textContent = ownedUpgrade ? 'Complete' : 'Craft';
+        button.disabled = !canCraft;
+        button.addEventListener('click', () => handleCraft(recipe.id));
+
+        actionRow.appendChild(status);
+        actionRow.appendChild(button);
+
+        card.appendChild(title);
+        card.appendChild(description);
+        card.appendChild(requirements);
+        card.appendChild(actionRow);
+
+        DOM.crafting.recipes.appendChild(card);
+    });
+}
+
+function handleCraft(recipeId) {
+    const recipe = CRAFTING_RECIPES.find(entry => entry.id === recipeId);
+    if (!recipe) return;
+
+    if (recipe.result?.upgrade && player.upgrades?.[recipe.result.upgrade]) {
+        showMessage('You already forged this upgrade.', 'error');
+        return;
+    }
+
+    if (!hasRequiredItems(player.inventory, recipe.requirements)) {
+        showMessage('Missing required ingredients.', 'error');
+        return;
+    }
+
+    removeItemsFromInventory(player.inventory, recipe.requirements);
+    addItemsToInventory(player.inventory, recipe.result?.items || []);
+
+    if (recipe.result?.upgrade) {
+        player.upgrades ??= {};
+        player.upgrades[recipe.result.upgrade] = true;
+    }
+
+    const craftedMessage = recipe.successMessage || 'Crafting complete!';
+    refreshUI(craftedMessage, 'success');
+    player.saveDataToLocalStorage();
+}
+
 function refreshUI(message, tone = 'info') {
     player.updatePlayerStats();
     graphics.updateStatsColors(player);
     graphics.updateInventory(player);
+    renderCraftingRecipes();
     renderShopWallet();
     updateActionCards();
     renderQuestTracker();
@@ -1073,7 +1204,8 @@ function applyOutcome(actionKey, config, success) {
     }
 
     if (config.apRestore) {
-        player.actionPoints = config.apRestore;
+        const apRestoreBonus = getApRestoreBonus();
+        player.actionPoints = config.apRestore + apRestoreBonus;
     } else {
         player.actionPoints -= config.apCost || 0;
     }

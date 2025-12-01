@@ -49,6 +49,44 @@ export function hasRequiredItems(inventory, requirements = []) {
     });
 }
 
+export const CRAFTING_INGREDIENTS = {
+    "Faded Trinket": { tier: 'basic', description: 'A worn charm brimming with faint energy.' },
+    "Hardened Resolve": { tier: 'standard', description: 'Stubborn grit that refuses to crack.' },
+    "Focus Token": { tier: 'standard', description: 'Keeps the mind fixed on the task ahead.' },
+    "Echoing Sigil": { tier: 'elite', description: 'Resonates with the tempo of your actions.' },
+    "Crystalized Courage": { tier: 'elite', description: 'Solidified bravery that fuels boldness.' }
+};
+
+export function isCraftingIngredient(itemName) {
+    return Boolean(CRAFTING_INGREDIENTS[itemName]);
+}
+
+export const CRAFTING_RECIPES = [
+    {
+        id: 'timer-reduction-badge',
+        name: 'Timer Reduction Badge',
+        description: 'Fuse battle trophies into a badge that trims action timers.',
+        requirements: [
+            { name: 'Faded Trinket', quantity: 2 },
+            { name: 'Echoing Sigil', quantity: 1 }
+        ],
+        result: { upgrade: 'timerReductionBadge' },
+        successMessage: 'You forged a Timer Reduction Badge! Actions feel lighter already.'
+    },
+    {
+        id: 'ap-talisman',
+        name: 'AP Talisman',
+        description: 'Channel grit and focus into a charm that restores extra AP when resting.',
+        requirements: [
+            { name: 'Hardened Resolve', quantity: 2 },
+            { name: 'Focus Token', quantity: 1 },
+            { name: 'Crystalized Courage', quantity: 1 }
+        ],
+        result: { upgrade: 'apTalisman' },
+        successMessage: 'You bind the talisman. Resting will now restore additional AP.'
+    }
+];
+
 export const ITEM_EFFECTS = {
     Snack: {
         type: 'consumable',

@@ -143,6 +143,12 @@
             border: 1px solid #cdd4ff;
             font-size: 0.85rem;
         }
+        .pill--muted {
+            background: #f5f5f5;
+            color: #4a4a4a;
+            border-color: #dcdcdc;
+            margin-left: 6px;
+        }
         .action-card__rewards {
             display: flex;
             gap: 6px;
@@ -340,6 +346,56 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .crafting-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .crafting-card {
+            border: 1px solid #b5b5b5;
+            border-radius: 6px;
+            padding: 10px;
+            background: #fdfdfd;
+            display: grid;
+            gap: 6px;
+        }
+
+        .crafting-card__title {
+            font-weight: 700;
+            color: #1f2a44;
+        }
+
+        .crafting-card__description {
+            color: #3f3f3f;
+        }
+
+        .crafting-card__requirements {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+            display: grid;
+            gap: 4px;
+        }
+
+        .crafting-card__requirements li[data-state="ready"] {
+            color: #20572d;
+        }
+
+        .crafting-card__requirements li[data-state="missing"] {
+            color: #8d2e2e;
+        }
+
+        .crafting-card__actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .crafting-card__status {
+            font-weight: 600;
+        }
+
     </style>
 </head>
 <body>
@@ -383,6 +439,12 @@
             <div class="window-body tab-content">
                 <p>Inventory content goes here</p>
                 <div id="inventory-list" aria-live="polite"></div>
+
+                <div class="crafting-section">
+                    <h4>Crafting</h4>
+                    <p id="crafting-status" class="message info">Earn ingredients from battles to unlock upgrades.</p>
+                    <div id="crafting-recipes" class="crafting-grid" aria-live="polite"></div>
+                </div>
 
             </div>
         </div>
