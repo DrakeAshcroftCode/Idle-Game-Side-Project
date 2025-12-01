@@ -281,6 +281,43 @@
         .countdown-timer, .message {
             text-shadow: 1px 1px 2px black;
         }
+        .timer-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .timer-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #f5f5f5;
+            border: 1px solid #cdd4ff;
+            font-weight: 600;
+            min-width: 48px;
+            text-align: center;
+        }
+        .timer-modifier-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #eef6ff;
+            border: 1px solid #cdd4ff;
+            color: #1f2a44;
+            font-size: 0.9rem;
+        }
+        .timer-modifier-badge[data-state="buffed"] {
+            background: #e9f8ec;
+            border-color: #9bd4a4;
+            color: #204423;
+        }
+        .timer-modifier-badge__label {
+            font-weight: 600;
+        }
         #bedroomImage {
             height: 55%;
             position: absolute;
@@ -413,8 +450,7 @@
                     <p>Current Level: <span id="current-level" style="color: green;">1</span></p>
                     <p>XP to Next Level: <span id="xp-to-next-level">50</span></p>
                     <p>Action Points: <span id="action-points">10</span></p>
-                    <p>Countdown Timer: <span id="countdown-timer" style="color: red;">10</span> seconds</p>
-                    <p>Timer Mods: <span id="timer-modifiers">None</span></p>
+                    <p class="timer-row">Countdown Timer: <span id="countdown-timer" class="timer-badge" aria-live="polite">10s</span><span class="timer-modifier-badge" id="timer-modifier-badge"><span class="timer-modifier-badge__label">Mods:</span><span id="timer-modifiers">None</span></span></p>
                     <p>Current XP: <span id="current-xp">0</span></p>
                     <p>Player Money: <span id="player-money">0</span></p>
                     <p>Shadow Essence: <span id="shadow-essence">0</span></p>

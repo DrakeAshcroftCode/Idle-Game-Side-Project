@@ -355,6 +355,7 @@ const DOM = {
         stamina: document.getElementById('player-stamina'),
         mana: document.getElementById('player-mana'),
         health: document.getElementById('player-health'),
+        timerModifierBadge: document.getElementById('timer-modifier-badge'),
         timerModifiers: document.getElementById('timer-modifiers'),
     },
     message: document.getElementById('message'),
@@ -610,7 +611,7 @@ export class player {
         DOM.stats.level.textContent = `(${this.level}) ${levelDisplayName}`;
         DOM.stats.xpToNextLevel.textContent = this.xpToNextLevel;
         DOM.stats.actionPoints.textContent = this.actionPoints;
-        DOM.stats.countdown.textContent = this.timer;
+        DOM.stats.countdown.textContent = `${this.timer}s`;
         DOM.stats.currentXP.textContent = this.currentXP;
         DOM.stats.money.textContent = this.playerMoney;
         DOM.stats.essence.textContent = this.shadowEssence;
@@ -620,11 +621,18 @@ export class player {
         DOM.stats.mana.textContent = this.mana;
         DOM.stats.health.textContent = this.health;
         if (DOM.stats.timerModifiers) {
-            const { resetReduction, penaltyReduction } = getTimerModifiers();
-            const parts = [];
-            if (resetReduction) parts.push(`-${resetReduction}s action timers`);
-            if (penaltyReduction) parts.push(`-${penaltyReduction}s failure penalty`);
-            DOM.stats.timerModifiers.textContent = parts.length ? parts.join(' | ') : 'None';
+            const { resetReduction, penaltyReduction, labels } = getTimerModifiers();
+            const modifierLabels = [...labels];
+            if (this.activeActionBuff?.timerReduction) {
+                modifierLabels.push(this.activeActionBuff.description || `-${this.activeActionBuff.timerReduction}s next action`);
+            }
+            if (!resetReduction && !penaltyReduction && !modifierLabels.length) {
+                modifierLabels.push('No active modifiers');
+            }
+            DOM.stats.timerModifiers.textContent = modifierLabels.length ? modifierLabels.join(' | ') : 'None';
+        }
+        if (DOM.stats.timerModifierBadge) {
+            DOM.stats.timerModifierBadge.dataset.state = this.activeActionBuff ? 'buffed' : 'base';
         }
     }
 
