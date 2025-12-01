@@ -107,6 +107,125 @@ const enemyWaves = [
     }
 ];
 
+export const QUESTS = [
+    {
+        id: 'minor-shadows',
+        title: 'Clear the Minor Shadows',
+        targetTier: 'Minor Shadows',
+        targetCount: 3,
+        description: 'Defeat 3 waves of Minor Shadows to steady your nerves.',
+        reward: {
+            perks: [
+                {
+                    type: 'timerReduction',
+                    amount: 1,
+                    usesRemaining: 5,
+                    description: '-1s action timers for your next 5 actions'
+                }
+            ]
+        }
+    },
+    {
+        id: 'lingering-doubts',
+        title: 'Silence Lingering Doubts',
+        targetTier: 'Lingering Doubts',
+        targetCount: 2,
+        description: 'Overcome 2 waves of Lingering Doubts to regain confidence.',
+        reward: {
+            perks: [
+                {
+                    type: 'apBoost',
+                    amount: 2,
+                    usesRemaining: 5,
+                    description: '+2 AP after actions for your next 5 actions'
+                }
+            ]
+        }
+    },
+    {
+        id: 'night-terrors',
+        title: 'Face the Night Terrors',
+        targetTier: 'Night Terrors',
+        targetCount: 1,
+        description: 'Defeat a Night Terror wave to steel your resolve.',
+        reward: {
+            perks: [
+                {
+                    type: 'timerReduction',
+                    amount: 1,
+                    usesRemaining: 10,
+                    description: '-1s action timers for 10 actions'
+                },
+                {
+                    type: 'apBoost',
+                    amount: 1,
+                    usesRemaining: 10,
+                    description: '+1 AP after actions for 10 actions'
+                }
+            ]
+        }
+    }
+];
+
+export function createDefaultQuestState() {
+    return {
+        activeQuestId: QUESTS[0]?.id ?? null,
+        progress: {},
+        completed: [],
+        perks: []
+    };
+}
+
+export function getActiveQuest(state) {
+    if (!state) return null;
+    const active = QUESTS.find(quest => quest.id === state.activeQuestId);
+    if (active) return active;
+    return QUESTS.find(quest => !state.completed?.includes(quest.id)) || null;
+}
+
+function cloneQuestState(state) {
+    return {
+        activeQuestId: state?.activeQuestId ?? null,
+        progress: { ...(state?.progress || {}) },
+        completed: [...(state?.completed || [])],
+        perks: [...(state?.perks || [])]
+    };
+}
+
+export function applyQuestProgress(questState, wave) {
+    const state = cloneQuestState(questState || createDefaultQuestState());
+    const activeQuest = getActiveQuest(state);
+    if (!activeQuest) {
+        return { state, changed: false, completedQuest: null, newlyActiveQuest: null, rewardPerks: [] };
+    }
+
+    if (!wave || wave.tier !== activeQuest.targetTier) {
+        return { state, changed: false, completedQuest: null, newlyActiveQuest: activeQuest, rewardPerks: [] };
+    }
+
+    const currentProgress = state.progress[activeQuest.id] ?? 0;
+    const updatedProgress = Math.min(activeQuest.targetCount, currentProgress + 1);
+    state.progress[activeQuest.id] = updatedProgress;
+
+    if (updatedProgress < activeQuest.targetCount || state.completed.includes(activeQuest.id)) {
+        return { state, changed: true, completedQuest: null, newlyActiveQuest: activeQuest, rewardPerks: [] };
+    }
+
+    state.completed.push(activeQuest.id);
+    const rewardPerks = activeQuest.reward?.perks || [];
+    state.perks.push(...rewardPerks);
+    const nextQuest = getActiveQuest(state);
+    state.activeQuestId = nextQuest?.id ?? null;
+
+    return {
+        state,
+        changed: true,
+        completedQuest: activeQuest,
+        newlyActiveQuest: nextQuest,
+        rewardPerks
+    };
+}
+
 function selectWaveForPlayer(playerLevel) {
     if (playerLevel > 20) {
         return enemyWaves[2];

@@ -1,4 +1,4 @@
-import { startBattle, getEnemyPreview } from '/battlesystem.js';
+import { applyQuestProgress, createDefaultQuestState, getActiveQuest, startBattle, getEnemyPreview } from '/battlesystem.js';
 import { addItemsToInventory, isItemUsable, normalizeItems, removeItemsFromInventory, useInventoryItem } from '/inventorySystem.js';
 import { SHOP_CATALOG, purchaseItem } from '/shopSystem.js';
 
@@ -202,6 +202,59 @@ const ACTION_ICONS = {
 
 const STORAGE_KEY = 'idle-hakiko-save';
 
+function normalizeQuestState(savedState) {
+    const defaults = createDefaultQuestState();
+    const state = {
+        ...defaults,
+        ...(savedState || {})
+    };
+    state.progress = { ...defaults.progress, ...(savedState?.progress || {}) };
+    state.completed = Array.isArray(savedState?.completed) ? savedState.completed : [];
+    state.perks = Array.isArray(savedState?.perks)
+        ? savedState.perks.map(perk => ({ ...perk }))
+        : [];
+    if (!state.activeQuestId) {
+        state.activeQuestId = getActiveQuest(state)?.id || defaults.activeQuestId;
+    }
+    return state;
+}
+
+function hasPerkUses(perk) {
+    return perk.usesRemaining === undefined || perk.usesRemaining === null || perk.usesRemaining > 0;
+}
+
+function getActiveQuestPerks(type) {
+    return (player.questState?.perks || []).filter(perk => perk.type === type && hasPerkUses(perk));
+}
+
+function getQuestTimerReduction() {
+    return getActiveQuestPerks('timerReduction').reduce((total, perk) => total + (perk.amount || 0), 0);
+}
+
+function getQuestApBoost() {
+    return getActiveQuestPerks('apBoost').reduce((total, perk) => total + (perk.amount || 0), 0);
+}
+
+function consumeQuestPerkUse(type) {
+    if (!player.questState?.perks) return;
+    player.questState.perks = player.questState.perks
+        .map(perk => {
+            if (perk.type === type && hasPerkUses(perk) && perk.usesRemaining !== undefined && perk.usesRemaining !== null) {
+                return { ...perk, usesRemaining: perk.usesRemaining - 1 };
+            }
+            return perk;
+        })
+        .filter(perk => perk.usesRemaining === undefined || perk.usesRemaining === null || perk.usesRemaining > 0);
+}
+
+function applyQuestApBoost() {
+    const apBonus = getQuestApBoost();
+    if (!apBonus) return 0;
+    player.actionPoints += apBonus;
+    consumeQuestPerkUse('apBoost');
+    return apBonus;
+}
+
 function isActionUnlocked(config, currentLevel = player?.level ?? 1) {
     if (!config) return false;
     return !config.unlockLevel || currentLevel >= config.unlockLevel;
@@ -228,7 +281,7 @@ function scaleTiming(value, tier) {
 
 function getTimerModifiers() {
     const ownedUpgrades = player?.upgrades || {};
-    return Object.entries(UPGRADE_EFFECTS).reduce((acc, [key, effect]) => {
+    const modifiers = Object.entries(UPGRADE_EFFECTS).reduce((acc, [key, effect]) => {
         if (ownedUpgrades[key]) {
             acc.resetReduction += effect.resetReduction || 0;
             acc.penaltyReduction += effect.penaltyReduction || 0;
@@ -236,6 +289,14 @@ function getTimerModifiers() {
         }
         return acc;
     }, { resetReduction: 0, penaltyReduction: 0, labels: [] });
+
+    const questTimerReduction = getQuestTimerReduction();
+    if (questTimerReduction) {
+        modifiers.resetReduction += questTimerReduction;
+        modifiers.labels.push(`-${questTimerReduction}s quest perk`);
+    }
+
+    return modifiers;
 }
 
 function getActionTimers(config) {
@@ -294,6 +355,10 @@ const DOM = {
         rewardItems: document.getElementById('battle-reward-items'),
         rewardTier: document.getElementById('battle-reward-tier'),
         startButton: document.getElementById('start-battle'),
+        questTitle: document.getElementById('battle-quest-title'),
+        questProgress: document.getElementById('battle-quest-progress'),
+        questReward: document.getElementById('battle-quest-reward'),
+        questPerks: document.getElementById('battle-quest-perks'),
     }
 };
 
@@ -449,6 +514,7 @@ export class player {
             timerReductionBadge: false,
             focusCharm: false
         };
+        this.questState = createDefaultQuestState();
 
         this.damage = 3; // Default damage
         this.defense = 1; // Default defense
@@ -485,6 +551,7 @@ export class player {
                 ...this.upgrades,
                 ...(savedData.upgrades || {})
             };
+            this.questState = normalizeQuestState(savedData.questState);
         } catch (error) {
             console.warn('Could not parse save data; resetting to defaults.', error);
             this.resetToDefaults();
@@ -547,7 +614,8 @@ export class player {
             mana: this.mana,
             health: this.health,
             staminaRegenRate: this.staminaRegenRate,
-            upgrades: this.upgrades
+            upgrades: this.upgrades,
+            questState: this.questState
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     }
@@ -899,6 +967,7 @@ function refreshUI(message, tone = 'info') {
     graphics.updateInventory(player);
     renderShopWallet();
     updateActionCards();
+    renderQuestTracker();
     if (message) {
         showMessage(message, tone);
     }
@@ -955,6 +1024,8 @@ function applyOutcome(actionKey, config, success) {
     const consumedBuff = pullActiveBuff();
     const timerReduction = consumedBuff?.timerReduction || 0;
     const buffNote = consumedBuff?.description;
+    const questTimerBonusActive = getQuestTimerReduction() > 0;
+    let appliedQuestAp = 0;
     const rewards = { xp: 0, gold: 0 };
     if (success) {
         player.currentXP += xpGain;
@@ -1006,8 +1077,18 @@ function applyOutcome(actionKey, config, success) {
     } else {
         player.actionPoints -= config.apCost || 0;
     }
+    appliedQuestAp = applyQuestApBoost();
+    if (questTimerBonusActive) {
+        consumeQuestPerkUse('timerReduction');
+    }
 
-    return { buffNote };
+    const perkNotes = [];
+    if (buffNote) perkNotes.push(buffNote);
+    if (appliedQuestAp) {
+        perkNotes.push(`+${appliedQuestAp} AP from quest perks`);
+    }
+
+    return { buffNote: perkNotes.join(' | ') };
 }
 
 function finalizeAction(actionKey, success, buffNote) {
@@ -1115,6 +1196,47 @@ function renderRewardItems(items = []) {
     });
 }
 
+function formatPerk(perk) {
+    const uses = perk.usesRemaining ?? '∞';
+    const label = perk.description || (perk.type === 'apBoost'
+        ? `+${perk.amount} AP bonus`
+        : `-${perk.amount}s timers`);
+    return `${label} (${uses} uses left)`;
+}
+
+function renderQuestTracker() {
+    if (!DOM.battle.questTitle) return;
+    const activeQuest = getActiveQuest(player.questState);
+
+    if (!activeQuest) {
+        DOM.battle.questTitle.textContent = 'All quests complete';
+        DOM.battle.questProgress.textContent = 'Enjoy your rewards!';
+        DOM.battle.questReward.textContent = '—';
+    } else {
+        const progress = player.questState.progress[activeQuest.id] ?? 0;
+        DOM.battle.questTitle.textContent = activeQuest.title;
+        DOM.battle.questProgress.textContent = `${progress} / ${activeQuest.targetCount} ${activeQuest.targetTier} waves`;
+        const rewardText = activeQuest.reward?.perks
+            ?.map(perk => perk.description || '')
+            ?.filter(Boolean)
+            .join(' | ') || 'Battle rewards';
+        DOM.battle.questReward.textContent = rewardText;
+    }
+
+    DOM.battle.questPerks.innerHTML = '';
+    const activePerks = (player.questState?.perks || []).filter(hasPerkUses);
+    if (!activePerks.length) {
+        DOM.battle.questPerks.textContent = 'No active perks';
+        return;
+    }
+
+    activePerks.forEach(perk => {
+        const line = document.createElement('div');
+        line.textContent = formatPerk(perk);
+        DOM.battle.questPerks.appendChild(line);
+    });
+}
+
 function updateBattlePanel(battleState) {
     if (!battleState) return;
     const { enemy, wave, player: battlePlayer } = battleState;
@@ -1165,6 +1287,17 @@ function handleBattleEnd(battleState, playerWon) {
         DOM.battle.rewardLoot.textContent = 'None';
         DOM.battle.rewardItems.textContent = 'None';
         DOM.battle.rewardTier.textContent = 'None';
+    }
+    if (playerWon) {
+        const questResult = applyQuestProgress(player.questState, battleState.wave);
+        player.questState = questResult.state;
+        if (questResult.completedQuest) {
+            const rewardLabel = questResult.rewardPerks?.map(perk => perk.description || '')?.filter(Boolean).join(' | ');
+            const completionText = `Quest complete: ${questResult.completedQuest.title}${rewardLabel ? ` (${rewardLabel})` : ''}`;
+            showToast(completionText, 'success');
+            showMessage(completionText, 'success');
+        }
+        renderQuestTracker();
     }
     refreshUI();
     showMessage(playerWon ? 'You won the battle!' : 'You were defeated.', playerWon ? 'success' : 'error');
